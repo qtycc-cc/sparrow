@@ -13,4 +13,5 @@ import java.util.List;
 public interface ConfigRepository extends JpaRepository<Config, Long>, JpaSpecificationExecutor<Config> {
     List<Config> findByAppId(Long appId);
     Page<Config> findByAppId(Long appId, Pageable pageable);
+    Long deleteByAppId(Long appId);
 }

@@ -3,6 +3,8 @@ package com.example.sparrow.configservice.controller.admin;
 import com.example.sparrow.configservice.dto.AppDto;
 import com.example.sparrow.configservice.entity.App;
 import com.example.sparrow.configservice.repository.AppRepository;
+import com.example.sparrow.configservice.repository.ConfigRepository;
+import com.example.sparrow.configservice.repository.ReleaseRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,10 @@ import org.springframework.web.bind.annotation.*;
 public class AppController {
     @Autowired
     private AppRepository appRepository;
+    @Autowired
+    private ConfigRepository configRepository;
+    @Autowired
+    private ReleaseRepository releaseRepository;
 
     @GetMapping
     public ResponseEntity<PagedModel<App>> page(Pageable pageable) {
@@ -49,6 +55,8 @@ public class AppController {
     @Transactional(rollbackFor = Exception.class)
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         appRepository.deleteById(id);
+        configRepository.deleteByAppId(id);
+        releaseRepository.deleteByAppId(id);
         return ResponseEntity.ok(null);
     }
 }

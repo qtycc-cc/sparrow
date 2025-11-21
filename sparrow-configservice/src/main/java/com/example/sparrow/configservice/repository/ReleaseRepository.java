@@ -10,4 +10,5 @@ import java.util.Optional;
 @Repository
 public interface ReleaseRepository extends JpaRepository<Release, Long>, JpaSpecificationExecutor<Release> {
     Optional<Release> findFirstByAppIdOrderByIdDesc(Long appId);
+    Long deleteByAppId(Long appId);
 }
