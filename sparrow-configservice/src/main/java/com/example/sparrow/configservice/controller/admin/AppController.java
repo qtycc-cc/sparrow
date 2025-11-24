@@ -2,6 +2,7 @@ package com.example.sparrow.configservice.controller.admin;
 
 import com.example.sparrow.configservice.dto.AppDto;
 import com.example.sparrow.configservice.entity.App;
+import com.example.sparrow.configservice.exception.ResourceNotFoundException;
 import com.example.sparrow.configservice.repository.AppRepository;
 import com.example.sparrow.configservice.repository.ConfigRepository;
 import com.example.sparrow.configservice.repository.ReleaseRepository;
@@ -28,18 +29,19 @@ public class AppController {
 
     @GetMapping
     public ResponseEntity<PagedModel<App>> page(Pageable pageable) {
-        Page<App> apps = appRepository.findAll(pageable);
-        return ResponseEntity.ok(new PagedModel<>(apps));
+        throw new RuntimeException("Exception occurred");
+//        Page<App> apps = appRepository.findAll(pageable);
+//        return ResponseEntity.ok(new PagedModel<>(apps));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<App> getOne(@PathVariable Long id) {
-        return ResponseEntity.ok(appRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("App not found")));
+        return ResponseEntity.ok(appRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("App not found")));
     }
 
     @GetMapping("/name/{name}")
     public ResponseEntity<App> getOne(@PathVariable String name) {
-        return ResponseEntity.ok(appRepository.findByName(name).orElseThrow(() -> new IllegalArgumentException("App not found")));
+        return ResponseEntity.ok(appRepository.findByName(name).orElseThrow(() -> new ResourceNotFoundException("App not found")));
     }
 
     @PostMapping

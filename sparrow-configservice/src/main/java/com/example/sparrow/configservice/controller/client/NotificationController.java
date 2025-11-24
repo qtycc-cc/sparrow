@@ -3,6 +3,7 @@ package com.example.sparrow.configservice.controller.client;
 import com.example.sparrow.configservice.entity.App;
 import com.example.sparrow.configservice.entity.Release;
 import com.example.sparrow.configservice.event.ReleaseEvent;
+import com.example.sparrow.configservice.exception.ResourceNotFoundException;
 import com.example.sparrow.configservice.repository.AppRepository;
 import com.example.sparrow.configservice.repository.ReleaseRepository;
 import com.example.sparrow.configservice.util.EntityManagerUtils;
@@ -42,12 +43,10 @@ public class NotificationController {
             @PathVariable String appName,
             @PathVariable Long notificationId
     ) {
-        App app = appRepository.findByName(appName).orElseThrow(() -> new IllegalArgumentException("App not found"));
+        App app = appRepository.findByName(appName).orElseThrow(() -> new ResourceNotFoundException("App not found"));
         Long appId = app.getId();
         DeferredResult<ResponseEntity<Long>> deferredResult = new DeferredResult<>(LONG_POLL_TIMEOUT_IN_MILLISECOND, new ResponseEntity<>(HttpStatus.NOT_MODIFIED));
-        deferredResult.onCompletion(() -> {
-            waiting.remove(appId, deferredResult);
-        });
+        deferredResult.onCompletion(() -> waiting.remove(appId, deferredResult));
         waiting.put(appId, deferredResult);
         Optional<Release> releaseOptional = releaseRepository.findFirstByAppIdOrderByIdDesc(appId);
         entityManagerUtils.closeEntityManager();

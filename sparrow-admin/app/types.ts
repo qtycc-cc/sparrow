@@ -1,5 +1,15 @@
 import type { ColumnDef } from "@tanstack/react-table";
 
+// RFC 9457 standard
+export type ProblemDetail= {
+  type: URL | string;
+  title?: string;
+  status: number;
+  detail?: string;
+  instance?: URL | string;
+  [key : string]: unknown;
+};
+
 export type PageResponse<T> = {
   content: T[];
   page: {

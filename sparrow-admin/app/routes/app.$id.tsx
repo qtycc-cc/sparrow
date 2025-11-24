@@ -1,5 +1,5 @@
 import type { Route } from "./+types/app.$id";
-import type { PageResponse } from "~/types";
+import type { PageResponse, ProblemDetail } from "~/types";
 import type { ColumnDef } from "@tanstack/react-table";
 import { createReactTable, timeStampToDateString } from "~/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "~/components/ui/dropdown-menu";
@@ -136,8 +136,11 @@ export async function loader({ params }: Route.LoaderArgs) {
     }
   });
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to load apps, ${errorText}`);
+    const problemDetail = await response.json() as ProblemDetail;
+    toast.error("加载失败", {
+      description: problemDetail?.detail
+    });
+    return [] as Config[];
   }
   const data = await response.json() as PageResponse<Config>;
   return data.content;
@@ -154,8 +157,11 @@ export async function clientAction({
       method: "DELETE"
     });
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to delete config, ${errorText}`);
+      const problemDetail = await response.json() as ProblemDetail;
+      toast.error("删除失败", {
+        description: problemDetail?.detail
+      });
+      return "Delete failed";
     }
     return "Delete success";
   }
@@ -171,8 +177,11 @@ export async function clientAction({
       })
     });
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to patch config, ${errorText}`);
+      const problemDetail = await response.json() as ProblemDetail;
+      toast.error("修改失败", {
+        description: problemDetail?.detail
+      });
+      return "Patch failed";
     }
     return "Patch success";
   }
@@ -188,8 +197,11 @@ export async function clientAction({
       })
     });
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to create config, ${errorText}`);
+      const problemDetail = await response.json() as ProblemDetail;
+      toast.error("创建失败", {
+        description: problemDetail?.detail
+      });
+      return "Create failed";
     }
     return "Create success";
   }
@@ -201,8 +213,11 @@ export async function clientAction({
       }
     });
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to release configs, ${errorText}`);
+      const problemDetail = await response.json() as ProblemDetail;
+      toast.error("发布失败", {
+        description: problemDetail?.detail
+      });
+      return "Release failed";
     }
     return "Release success";
   }

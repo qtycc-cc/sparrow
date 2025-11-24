@@ -3,6 +3,7 @@ package com.example.sparrow.configservice.controller.admin;
 import com.example.sparrow.configservice.entity.Config;
 import com.example.sparrow.configservice.entity.Release;
 import com.example.sparrow.configservice.event.ReleaseEvent;
+import com.example.sparrow.configservice.exception.ResourceNotFoundException;
 import com.example.sparrow.configservice.repository.AppRepository;
 import com.example.sparrow.configservice.repository.ConfigRepository;
 import com.example.sparrow.configservice.repository.ReleaseRepository;
@@ -37,16 +38,14 @@ public class ReleaseController {
     @PostMapping("/appId/{appId}")
     @Transactional(rollbackFor = Exception.class)
     public ResponseEntity<Void> release(@PathVariable Long appId) throws JsonProcessingException {
-        appRepository.findById(appId).orElseThrow(() -> new IllegalArgumentException("App not found"));
+        appRepository.findById(appId).orElseThrow(() -> new ResourceNotFoundException("App not found"));
         List<Config> configs = configRepository.findByAppId(appId);
         Release release = new Release();
         release.setAppId(appId);
         Map<String, String> configMap = configs.stream().collect(Collectors.toMap(Config::getItemKey, Config::getItemValue, (k1, k2) -> k1));
         release.setConfigSnapshot(objectMapper.writeValueAsString(configMap));
         releaseRepository.save(release);
-        TxUtils.afterCommit(() -> {
-            applicationEventPublisher.publishEvent(new ReleaseEvent(this, appId, release.getId()));
-        });
+        TxUtils.afterCommit(() -> applicationEventPublisher.publishEvent(new ReleaseEvent(this, appId, release.getId())));
         return ResponseEntity.ok(null);
     }
 }

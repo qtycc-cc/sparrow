@@ -2,6 +2,7 @@ package com.example.sparrow.configservice.controller.admin;
 
 import com.example.sparrow.configservice.dto.ConfigDto;
 import com.example.sparrow.configservice.entity.Config;
+import com.example.sparrow.configservice.exception.ResourceNotFoundException;
 import com.example.sparrow.configservice.repository.AppRepository;
 import com.example.sparrow.configservice.repository.ConfigRepository;
 import jakarta.validation.Valid;
@@ -31,13 +32,13 @@ public class ConfigController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Config> getOne(@PathVariable Long id) {
-        return ResponseEntity.ok(configRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Config not found")));
+        return ResponseEntity.ok(configRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Config not found")));
     }
 
     @PostMapping("/appId/{appId}")
     @Transactional(rollbackFor = Exception.class)
     public ResponseEntity<Void> create(@PathVariable Long appId, @RequestBody @Valid ConfigDto configDto) {
-        appRepository.findById(appId).orElseThrow(() -> new IllegalArgumentException("App not found"));
+        appRepository.findById(appId).orElseThrow(() -> new ResourceNotFoundException("App not found"));
         Config config = new Config();
         config.setAppId(appId);
         BeanUtils.copyProperties(configDto, config);
@@ -48,7 +49,7 @@ public class ConfigController {
     @PatchMapping("/{id}")
     @Transactional(rollbackFor = Exception.class)
     public ResponseEntity<Void> patch(@PathVariable Long id, @RequestBody @Valid ConfigDto configDto) {
-        Config config = configRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Config not found"));
+        Config config = configRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Config not found"));
         // This will save to db when tx commit
         config.setItemKey(configDto.getItemKey());
         config.setItemValue(configDto.getItemValue());

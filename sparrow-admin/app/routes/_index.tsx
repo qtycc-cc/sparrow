@@ -1,6 +1,6 @@
 import type { Route } from "./+types/_index";
 import { type ColumnDef } from "@tanstack/react-table";
-import type { PageResponse } from "~/types";
+import type { PageResponse, ProblemDetail } from "~/types";
 import { DataTable } from "~/components/data-table";
 import { createReactTable, timeStampToDateString } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
@@ -16,6 +16,7 @@ import { Input } from "~/components/ui/input";
 import { useState } from "react";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty";
 import { Spinner } from "~/components/ui/spinner";
+import { toast } from "sonner";
 
 type App = {
   id: number;
@@ -105,8 +106,11 @@ export async function clientLoader() {
     }
   });
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to load apps, ${errorText}`);
+    const problemDetail = await response.json() as ProblemDetail;
+    toast.error("加载失败", {
+      description: problemDetail?.detail
+    });
+    return [] as App[];
   }
   const data = await response.json() as PageResponse<App>;
   return data.content;
@@ -122,8 +126,11 @@ export async function clientAction({
       method: "DELETE"
     });
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to load apps, ${errorText}`);
+      const problemDetail = await response.json() as ProblemDetail;
+      toast.error("删除失败", {
+        description: problemDetail?.detail
+      });
+      return "Delete failed";
     }
     return "Delete success";
   }
@@ -138,8 +145,11 @@ export async function clientAction({
       }),
     });
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to create app, ${errorText}`);
+      const problemDetail = await response.json() as ProblemDetail;
+      toast.error("创建失败", {
+        description: problemDetail?.detail
+      });
+      return "Create failed";
     }
     return "Create success";
   }
