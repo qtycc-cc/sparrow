@@ -262,7 +262,7 @@ export default function AppDetail({
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
-              <Form method="patch" onSubmit={() => setShowCreateDialog(false)}>
+              <Form method="post" onSubmit={() => setShowCreateDialog(false)}>
                 <DialogHeader>
                   <DialogTitle>新增应用</DialogTitle>
                 </DialogHeader>
