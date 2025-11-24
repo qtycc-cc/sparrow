@@ -128,7 +128,7 @@ const columns: ColumnDef<Config>[] = [
   },
 ];
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params }: Route.ClientLoaderArgs) {
   const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/config/appId/${params.id}`, {
     method: "GET",
     headers: {
@@ -149,7 +149,7 @@ export async function loader({ params }: Route.LoaderArgs) {
 export async function clientAction({
   request,
   params
-}: Route.ActionArgs) {
+}: Route.ClientActionArgs) {
   const formData = await request.formData();
   const { action, ...value } = Object.fromEntries(formData);
   if (action === "delete") {

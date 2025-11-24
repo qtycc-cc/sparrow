@@ -118,7 +118,7 @@ export async function clientLoader() {
 
 export async function clientAction({
   request,
-}: Route.ActionArgs) {
+}: Route.ClientActionArgs) {
   const formData = await request.formData();
   const { action, ...value } = Object.fromEntries(formData);
   if (action === "delete") {
