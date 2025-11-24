@@ -15,8 +15,8 @@ import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 import { useEffect, useState } from "react";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty";
-import { Spinner } from "~/components/ui/spinner";
 import { toast } from "sonner";
+import { Loader } from "~/components/loader";
 
 type Config = {
   id: number;
@@ -128,7 +128,7 @@ const columns: ColumnDef<Config>[] = [
   },
 ];
 
-export async function loader({ params }: Route.ClientLoaderArgs) {
+export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/config/appId/${params.id}`, {
     method: "GET",
     headers: {
@@ -225,9 +225,7 @@ export async function clientAction({
 
 export function HydrateFallback() {
   return (
-    <div className="container">
-      <Spinner className="size-8" />
-    </div>
+    <Loader></Loader>
   );
 }
 
