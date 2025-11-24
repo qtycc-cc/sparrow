@@ -29,9 +29,8 @@ public class AppController {
 
     @GetMapping
     public ResponseEntity<PagedModel<App>> page(Pageable pageable) {
-        throw new RuntimeException("Exception occurred");
-//        Page<App> apps = appRepository.findAll(pageable);
-//        return ResponseEntity.ok(new PagedModel<>(apps));
+        Page<App> apps = appRepository.findAll(pageable);
+        return ResponseEntity.ok(new PagedModel<>(apps));
     }
 
     @GetMapping("/{id}")
