@@ -3,13 +3,13 @@ import type { PageResponse, ProblemDetail } from "~/types";
 import type { ColumnDef } from "@tanstack/react-table";
 import { createReactTable, timeStampToDateString } from "~/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "~/components/ui/dropdown-menu";
-import { Cog, MoreHorizontal, RefreshCcwIcon } from "lucide-react";
+import { ArrowLeft, Cog, MoreHorizontal, RefreshCcwIcon } from "lucide-react";
 import { DataTable } from "~/components/data-table";
 import { DataTablePagination } from "~/components/data-table-pagination";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "~/components/ui/alert-dialog";
-import { Form, useActionData } from "react-router";
+import { Form, Link, useActionData } from "react-router";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
@@ -248,7 +248,12 @@ export default function AppDetail({
   return (
     <div className="container mx-auto py-5">
       <div className="container mx-auto flex flex-row justify-between items-center mb-4">
-        <h1 className="mb-4 text-2xl font-bold">配置列表</h1>
+        <div className="flex flex-row items-center gap-2">
+          <Link to="/">
+            <ArrowLeft />
+          </Link>
+          <h1 className="text-2xl font-bold">配置列表</h1>
+        </div>
         <div className="flex justify-around gap-2 self-end">
           <Form method="post">
             <Button className="bg-[#84cc16] hover:bg-[#65a30d]" type="submit" name="action" value="release">发布</Button>
