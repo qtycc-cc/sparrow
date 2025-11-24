@@ -6,6 +6,7 @@ import {
   Scripts,
   ScrollRestoration,
   useLoaderData,
+  useNavigation,
 } from "react-router";
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -14,6 +15,7 @@ import { PreventFlashOnWrongTheme, ThemeProvider, useTheme } from "remix-themes"
 import clsx from "clsx";
 import Navbar from "./components/navbar";
 import { Toaster } from "sonner";
+import { Loader } from "./components/loader";
 
 export function meta() {
   return [
@@ -55,6 +57,8 @@ export default function AppWithProviders() {
 export function App() {
   const data = useLoaderData<typeof loader>();
   const [theme] = useTheme();
+  const navigation = useNavigation();
+  const isNavigating = Boolean(navigation.location);
   return (
     <html lang="zh-CN" className={clsx(theme)}>
       <head>
@@ -65,11 +69,10 @@ export function App() {
         <Links />
       </head>
       <body>
-        <div className="min-h-screen">
+        { isNavigating && <Loader></Loader> }
+        <div className="min-h-screen px-4">
           <Navbar />
-          <div className="container mx-auto px-2 py-3">
-            <Outlet />
-          </div>
+          <Outlet />
         </div>
         <ScrollRestoration />
         <Scripts />

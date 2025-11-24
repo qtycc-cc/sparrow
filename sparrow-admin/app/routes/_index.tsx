@@ -15,8 +15,8 @@ import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 import { useState } from "react";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty";
-import { Spinner } from "~/components/ui/spinner";
 import { toast } from "sonner";
+import { Loader } from "~/components/loader";
 
 type App = {
   id: number;
@@ -157,9 +157,7 @@ export async function clientAction({
 
 export function HydrateFallback() {
   return (
-    <div className="container">
-      <Spinner className="size-8" />
-    </div>
+    <Loader></Loader>
   );
 }
 
