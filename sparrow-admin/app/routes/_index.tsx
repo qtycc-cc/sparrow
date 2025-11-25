@@ -1,13 +1,13 @@
 import type { Route } from "./+types/_index";
-import { type ColumnDef } from "@tanstack/react-table";
-import type { PageResponse, ProblemDetail } from "~/types";
+import { type ColumnDef, type Updater } from "@tanstack/react-table";
+import type { PageResponse, Pagination, ProblemDetail } from "~/types";
 import { DataTable } from "~/components/data-table";
-import { createReactTable, timeStampToDateString } from "~/lib/utils";
+import { createReactTable, emptyPageResponse, timeStampToDateString } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { DataTablePagination } from "~/components/data-table-pagination";
 import { Separator } from "~/components/ui/separator";
 import { Grid2x2Check, MoreHorizontal, RefreshCcwIcon } from "lucide-react";
-import { Form, Link } from "react-router";
+import { Form, Link, useSearchParams } from "react-router";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "~/components/ui/alert-dialog";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "~/components/ui/dropdown-menu";
@@ -97,9 +97,13 @@ const columns: ColumnDef<App>[] = [
   },
 ];
 
-export async function clientLoader() {
-  const SIZE = 10;
-  const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/app?page=0&size=${SIZE}`, {
+export async function clientLoader({
+  request,
+}: Route.ClientLoaderArgs) {
+  const url = new URL(request.url);
+  const pageIndex = Number(url.searchParams.get("pageIndex") || 0);
+  const pageSize = Number(url.searchParams.get("pageSize") || 10);
+  const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/app?page=${pageIndex}&size=${pageSize}`, {
     method: "GET",
     headers: {
       "Accept": "application/json",
@@ -110,10 +114,10 @@ export async function clientLoader() {
     toast.error("加载失败", {
       description: problemDetail?.detail
     });
-    return [] as App[];
+    return emptyPageResponse<App>();
   }
   const data = await response.json() as PageResponse<App>;
-  return data.content;
+  return data;
 }
 
 export async function clientAction({
@@ -164,9 +168,33 @@ export function HydrateFallback() {
 export default function Home({
   loaderData,
 }: Route.ComponentProps) {
-  const apps = loaderData satisfies App[];
-  const table = createReactTable({ columns, data: apps });
+  const [, setSearchParams] = useSearchParams();
+  const pagination: Pagination = {
+    pageIndex: loaderData.page.number,
+    pageSize: loaderData.page.size,
+  };
+  function handlePaginationChange(updater: Updater<Pagination>) {
+    const newState =
+      typeof updater === "function"
+        ? updater(pagination)
+        : updater;
+
+    setSearchParams({
+      pageIndex: newState.pageIndex.toString(),
+      pageSize: newState.pageSize.toString(),
+    });
+  }
+  const appPage = loaderData satisfies PageResponse<App>;
+  const table = createReactTable({
+    columns,
+    data: appPage.content,
+    pageCount: loaderData.page.totalPages,
+    pagination: pagination,
+    onPaginationChange: handlePaginationChange
+  });
+
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+
   return (
     <div className="container mx-auto py-5">
       <div className="container mx-auto flex flex-row justify-between items-center mb-4">
@@ -203,13 +231,13 @@ export default function Home({
           </DialogContent>
         </Dialog>
       </div>
-      {apps.length ? (
+      {appPage.content.length ? (
         <>
           <DataTable table={table} />
           <Separator className="my-4" />
           <DataTablePagination table={table} />
         </>
-      ): (
+      ) : (
         <>
           <Empty className="from-muted/50 to-background h-full bg-linear-to-b from-30%">
             <EmptyHeader>
