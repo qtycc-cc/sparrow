@@ -1,7 +1,7 @@
 import type { Route } from "./+types/app.$id";
 import type { PageResponse, ProblemDetail } from "~/types";
-import type { ColumnDef } from "@tanstack/react-table";
-import { createReactTable, timeStampToDateString } from "~/lib/utils";
+import type { ColumnDef, Updater } from "@tanstack/react-table";
+import { createReactTable, emptyPageResponse, timeStampToDateString } from "~/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "~/components/ui/dropdown-menu";
 import { ArrowLeft, Cog, MoreHorizontal, RefreshCcwIcon } from "lucide-react";
 import { DataTable } from "~/components/data-table";
@@ -9,7 +9,7 @@ import { DataTablePagination } from "~/components/data-table-pagination";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "~/components/ui/alert-dialog";
-import { Form, Link, useActionData } from "react-router";
+import { Form, Link, useActionData, useSearchParams } from "react-router";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
@@ -56,6 +56,7 @@ const columns: ColumnDef<Config>[] = [
   },
   {
     id: "actions",
+    "header": "操作",
     cell: ({ row }) => {
       const config = row.original;
       const [showPatchDialog, setShowPatchDialog] = useState(false);
@@ -128,8 +129,14 @@ const columns: ColumnDef<Config>[] = [
   },
 ];
 
-export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-  const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/config/appId/${params.id}`, {
+export async function clientLoader({
+  request,
+  params,
+}: Route.ClientLoaderArgs) {
+  const url = new URL(request.url);
+  const pageIndex = Number(url.searchParams.get("pageIndex") || 0);
+  const pageSize = Number(url.searchParams.get("pageSize") || 10);
+  const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/config/appId/${params.id}?page=${pageIndex}&size=${pageSize}`, {
     method: "GET",
     headers: {
       "Accept": "application/json",
@@ -140,10 +147,10 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
     toast.error("加载失败", {
       description: problemDetail?.detail
     });
-    return [] as Config[];
+    return emptyPageResponse<Config>();
   }
   const data = await response.json() as PageResponse<Config>;
-  return data.content;
+  return data;
 }
 
 export async function clientAction({
@@ -232,11 +239,35 @@ export function HydrateFallback() {
 export default function AppDetail({
   loaderData,
 }: Route.ComponentProps) {
-  const actionData = useActionData();
-  const configs = loaderData satisfies Config[];
-  const table = createReactTable({ columns, data: configs });
+  const [, setSearchParams] = useSearchParams();
+  const pagination = {
+    pageIndex: loaderData.page.number,
+    pageSize: loaderData.page.size,
+  };
+  function handlePaginationChange(updater: Updater<typeof pagination>) {
+    const newState =
+      typeof updater === "function"
+        ? updater(pagination)
+        : updater;
+
+    setSearchParams({
+      pageIndex: newState.pageIndex.toString(),
+      pageSize: newState.pageSize.toString(),
+    });
+  }
+  const configPage = loaderData satisfies PageResponse<Config>;
+
+  const table = createReactTable({
+    columns,
+    data: configPage.content,
+    pageCount: loaderData.page.totalPages,
+    pagination: pagination,
+    onPaginationChange: handlePaginationChange
+  });
+
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
+  const actionData = useActionData();
   useEffect(() => {
     if (actionData === "Release success") {
       toast.success("发布成功");
@@ -294,7 +325,7 @@ export default function AppDetail({
         </div>
       </div>
       {/**Keep the same table */}
-      {configs.length ? (
+      {configPage.content.length ? (
         <>
           <DataTable table={table} />
           <Separator className="my-4" />
