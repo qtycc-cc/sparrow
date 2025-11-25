@@ -1,4 +1,4 @@
-import type { Route } from "./+types/app.$id";
+import type { Route } from "./+types/app_.$id.config";
 import type { PageResponse, ProblemDetail } from "~/types";
 import type { ColumnDef, Updater } from "@tanstack/react-table";
 import { createReactTable, emptyPageResponse, timeStampToDateString } from "~/lib/utils";
@@ -236,7 +236,7 @@ export function HydrateFallback() {
   );
 }
 
-export default function AppDetail({
+export default function AppConfigDetail({
   loaderData,
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams();
@@ -278,7 +278,7 @@ export default function AppDetail({
     <div className="container mx-auto py-5">
       <div className="container mx-auto flex flex-row justify-between items-center mb-4">
         <div className="flex flex-row items-center gap-2">
-          <Link to="/">
+          <Link to="/app">
             <ArrowLeft />
           </Link>
           <h1 className="text-2xl font-bold">配置列表</h1>
