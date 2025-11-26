@@ -7,7 +7,7 @@ import { Button } from "~/components/ui/button";
 import { DataTablePagination } from "~/components/data-table-pagination";
 import { Separator } from "~/components/ui/separator";
 import { Grid2x2Check, MoreHorizontal, RefreshCcwIcon } from "lucide-react";
-import { Form, Link, Outlet, useSearchParams, useSubmit } from "react-router";
+import { Link, Outlet, useNavigate, useSearchParams } from "react-router";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "~/components/ui/dropdown-menu";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty";
 import { toast } from "sonner";
@@ -48,7 +48,7 @@ const columns: ColumnDef<App>[] = [
     "header": "操作",
     cell: ({ row }) => {
       const app = row.original;
-      const submit = useSubmit();
+      const navigate = useNavigate();
       return (
         <>
           <DropdownMenu>
@@ -62,10 +62,7 @@ const columns: ColumnDef<App>[] = [
               <DropdownMenuItem>
                 <Link className="w-full" to={`/app/${app.id}/config`}>详情</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onClick={() => submit(
-                {}, {
-                  action: `action/delete-app/${app.id}`
-                })}>
+              <DropdownMenuItem variant="destructive" onClick={() => navigate(`/app/action/delete-app/${app.id}${location.search}`)}>
                 删除
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -108,6 +105,7 @@ export function HydrateFallback() {
 export default function App({
   loaderData,
 }: Route.ComponentProps) {
+  const navigate = useNavigate();
   const [, setSearchParams] = useSearchParams();
   const pagination: Pagination = {
     pageIndex: loaderData.page.number,
@@ -138,9 +136,7 @@ export default function App({
       <Outlet />
       <div className="container mx-auto flex flex-row justify-between items-center mb-4">
         <h1 className="mb-4 text-2xl font-bold">应用列表</h1>
-        <Form action="action/create-app">
-          <Button type="submit">新增应用</Button>
-        </Form>
+        <Button onClick={() => navigate(`action/create-app${location.search}`)}>新增应用</Button>
       </div>
       {appPage.content.length ? (
         <>

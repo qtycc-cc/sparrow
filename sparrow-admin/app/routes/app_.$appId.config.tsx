@@ -11,7 +11,7 @@ import { Separator } from "~/components/ui/separator";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty";
 import { toast } from "sonner";
 import { Loader } from "~/components/loader";
-import { Form, Link, Outlet, useSearchParams, useSubmit } from "react-router";
+import { Form, Link, Outlet, useNavigate, useSearchParams } from "react-router";
 
 type Config = {
   id: number;
@@ -54,7 +54,7 @@ const columns: ColumnDef<Config>[] = [
     "header": "操作",
     cell: ({ row }) => {
       const config = row.original;
-      const submit = useSubmit();
+      const navigate = useNavigate();
       return (
         <>
           <DropdownMenu modal={false} >
@@ -65,15 +65,8 @@ const columns: ColumnDef<Config>[] = [
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => submit(
-                {}, {
-                  action: `action/edit-config/${config.id}`
-                })}>编辑</DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onClick={() => submit(
-                {}, {
-                  action: `action/delete-config/${config.id}`
-                }
-              )}>删除</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate(`action/edit-config/${config.id}${location.search}`)}>编辑</DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onClick={() => navigate(`action/delete-config/${config.id}${location.search}`)}>删除</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </>
@@ -133,6 +126,7 @@ export function HydrateFallback() {
 export default function AppConfigs({
   loaderData,
 }: Route.ComponentProps) {
+  const navigate = useNavigate();
   const [, setSearchParams] = useSearchParams();
   const pagination = {
     pageIndex: loaderData.page.number,
@@ -173,9 +167,7 @@ export default function AppConfigs({
           <Form method="post">
             <Button className="bg-[#84cc16] hover:bg-[#65a30d]" type="submit">发布</Button>
           </Form>
-          <Form action="action/create-config">
-            <Button type="submit">新增</Button>
-          </Form>
+          <Button onClick={() => navigate(`action/create-config${location.search}`)}>新增</Button>
         </div>
       </div>
       {/**Keep the same table */}
