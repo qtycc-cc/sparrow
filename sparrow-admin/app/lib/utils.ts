@@ -1,7 +1,7 @@
-import { useReactTable, getCoreRowModel, getPaginationRowModel } from "@tanstack/react-table";
+import { useReactTable, getCoreRowModel } from "@tanstack/react-table";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import type { DataTableProps } from "~/types";
+import type { PageResponse, ServersideDataTableProps } from "~/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -21,14 +21,28 @@ export function timeStampToDateString(timestamp: bigint): string {
   return formatter.format(date);
 }
 
-export function createReactTable<TData, TValue>({
-  columns,
-  data,
-}: DataTableProps<TData, TValue>) {
+export function emptyPageResponse<T>(): PageResponse<T> {
+  return {
+    content: [],
+    page: {
+      size: 0,
+      number: 0,
+      totalElements: 0,
+      totalPages: 0,
+    },
+  };
+}
+
+export function createReactTable<TData, TValue>(props: ServersideDataTableProps<TData, TValue>) {
   return useReactTable({
-    data,
-    columns,
+    columns: props.columns,
+    data: props.data,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination: true,
+    pageCount: props.pageCount,
+    state: {
+      pagination: props.pagination,
+    },
+    onPaginationChange: props.onPaginationChange,
   });
 }

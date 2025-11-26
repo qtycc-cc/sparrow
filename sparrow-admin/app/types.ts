@@ -1,4 +1,4 @@
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, OnChangeFn, PaginationState } from "@tanstack/react-table";
 
 // RFC 9457 standard
 export type ProblemDetail= {
@@ -16,11 +16,19 @@ export type PageResponse<T> = {
     size: number; // current page size
     number: number; // current page number
     totalElements: number;
-    totolPages: number;
+    totalPages: number;
   }
 };
 
-export type DataTableProps<TData, TValue> = {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
+export type Pagination = {
+  pageIndex: number;
+  pageSize: number;
+};
+
+export type ServersideDataTableProps<TData, TValue> = {
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
+  pageCount: number;
+  pagination: PaginationState;
+  onPaginationChange: OnChangeFn<PaginationState>;
 };
