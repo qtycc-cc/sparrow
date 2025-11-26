@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @CrossOrigin
@@ -47,6 +48,27 @@ public class ReleaseController {
     @GetMapping("/{id}")
     public ResponseEntity<Release> getOne(@PathVariable Long id) {
         return ResponseEntity.ok(releaseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Release not found")));
+    }
+
+    @PostMapping("/appId/{appId}/rollback")
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseEntity<Void> rollback(@PathVariable Long appId, @RequestParam Long toId) {
+        Release latest = releaseRepository.findFirstByAppIdOrderByIdDesc(appId).orElseThrow(() -> new IllegalStateException("Latest release not found"));
+        Release toRelease;
+        if (Objects.equals(latest.getId(), toId)) {
+            // indicate user want to roll back the latest release
+            // so the target release is the second new release
+            toRelease = releaseRepository.findFirstByIdLessThanOrderByIdDesc(latest.getId()).orElseThrow(() -> new ResourceNotFoundException("Target release not found"));
+        } else {
+            toRelease = releaseRepository.findById(toId).orElseThrow(() -> new ResourceNotFoundException("Target release not found"));
+        }
+        // create a new release with target's config snapshot
+        Release release = new Release();
+        release.setAppId(appId);
+        release.setConfigSnapshot(toRelease.getConfigSnapshot());
+        releaseRepository.save(release);
+        TxUtils.afterCommit(() -> applicationEventPublisher.publishEvent(new ReleaseEvent(this, appId, release.getId())));
+        return ResponseEntity.ok(null);
     }
 
     @PostMapping("/appId/{appId}")
