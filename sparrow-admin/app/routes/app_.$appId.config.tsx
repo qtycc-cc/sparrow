@@ -1,5 +1,5 @@
 import type { Route } from "./+types/app_.$appId.config";
-import type { PageResponse, ProblemDetail } from "~/types";
+import type { PageResponse, Pagination, ProblemDetail } from "~/types";
 import type { ColumnDef, Updater } from "@tanstack/react-table";
 import { createReactTable, emptyPageResponse, timeStampToDateString } from "~/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "~/components/ui/dropdown-menu";
@@ -128,11 +128,11 @@ export default function AppConfigs({
 }: Route.ComponentProps) {
   const navigate = useNavigate();
   const [, setSearchParams] = useSearchParams();
-  const pagination = {
+  const pagination: Pagination = {
     pageIndex: loaderData.page.number,
     pageSize: loaderData.page.size,
   };
-  function handlePaginationChange(updater: Updater<typeof pagination>) {
+  function handlePaginationChange(updater: Updater<Pagination>) {
     const newState =
       typeof updater === "function"
         ? updater(pagination)

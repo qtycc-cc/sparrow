@@ -12,6 +12,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -34,6 +37,17 @@ public class ReleaseController {
     private ApplicationEventPublisher applicationEventPublisher;
     @Autowired
     private ObjectMapper objectMapper;
+
+    @GetMapping("/appId/{appId}")
+    public ResponseEntity<PagedModel<Release>> page(@PathVariable Long appId, Pageable pageable) {
+        Page<Release> releases = releaseRepository.findByAppId(appId, pageable);
+        return ResponseEntity.ok(new PagedModel<>(releases));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Release> getOne(@PathVariable Long id) {
+        return ResponseEntity.ok(releaseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Release not found")));
+    }
 
     @PostMapping("/appId/{appId}")
     @Transactional(rollbackFor = Exception.class)
