@@ -60,7 +60,10 @@ const columns: ColumnDef<App>[] = [
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem>
-                <Link className="w-full" to={`/app/${app.id}/config`}>详情</Link>
+                <Link className="w-full" to={`/app/${app.id}/config`}>配置详情</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link className="w-full" to={`/app/${app.id}/release`}>发布详情</Link>
               </DropdownMenuItem>
               <DropdownMenuItem variant="destructive" onClick={() => navigate(`/app/action/delete-app/${app.id}${location.search}`)}>
                 删除

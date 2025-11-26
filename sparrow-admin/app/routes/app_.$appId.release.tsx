@@ -1,39 +1,34 @@
-import type { Route } from "./+types/app_.$appId.config";
-import type { PageResponse, Pagination, ProblemDetail } from "~/types";
-import type { ColumnDef, Updater } from "@tanstack/react-table";
+import type { PageResponse, ProblemDetail } from "~/types";
+import type { Route } from "./+types/app_.$appId.release";
 import { createReactTable, emptyPageResponse, timeStampToDateString } from "~/lib/utils";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "~/components/ui/dropdown-menu";
-import { ArrowLeft, Cog, MoreHorizontal, RefreshCcwIcon } from "lucide-react";
-import { DataTable } from "~/components/data-table";
-import { DataTablePagination } from "~/components/data-table-pagination";
-import { Button } from "~/components/ui/button";
-import { Separator } from "~/components/ui/separator";
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty";
 import { toast } from "sonner";
+import type { ColumnDef, Updater } from "@tanstack/react-table";
 import { Loader } from "~/components/loader";
-import { Form, Link, Outlet, useNavigate, useSearchParams } from "react-router";
+import { Link, Outlet, useNavigate, useSearchParams } from "react-router";
+import { DataTable } from "~/components/data-table";
+import { Separator } from "~/components/ui/separator";
+import { DataTablePagination } from "~/components/data-table-pagination";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty";
+import { ArrowLeft, Cog, MoreHorizontal, RefreshCcwIcon } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import JsonView from "@uiw/react-json-view";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { monokaiTheme } from "@uiw/react-json-view/monokai";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "~/components/ui/dropdown-menu";
+import { useState } from "react";
 
-type Config = {
+type Release = {
   id: number;
   appId: number;
-  itemKey: string;
-  itemValue: string;
+  configSnapshot: string
   timeCreate: bigint;
   timeUpdate: bigint;
 };
 
-const columns: ColumnDef<Config>[] = [
+const columns: ColumnDef<Release>[] = [
   {
     "accessorKey": "id",
     "header": "ID",
-  },
-  {
-    "accessorKey": "itemKey",
-    "header": "配置项",
-  },
-  {
-    "accessorKey": "itemValue",
-    "header": "配置值",
   },
   {
     "accessorKey": "timeCreate",
@@ -53,11 +48,12 @@ const columns: ColumnDef<Config>[] = [
     id: "actions",
     "header": "操作",
     cell: ({ row }) => {
-      const config = row.original;
+      const release = row.original;
       const navigate = useNavigate();
+      const [showDialog, setShowDialog] = useState(false);
       return (
         <>
-          <DropdownMenu modal={false} >
+          <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
                 <span className="sr-only">Open menu</span>
@@ -65,10 +61,25 @@ const columns: ColumnDef<Config>[] = [
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => navigate(`action/edit-config/${config.id}${location.search}`)}>编辑</DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onClick={() => navigate(`action/delete-config/${config.id}${location.search}`)}>删除</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowDialog(true)}>
+                展示
+              </DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onClick={() => navigate(`action/rollback/${release.id}${location.search}`)}>
+                回滚
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Dialog open={showDialog} onOpenChange={setShowDialog}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>JSON View</DialogTitle>
+                <DialogDescription>
+                  JSON格式化展示
+                </DialogDescription>
+              </DialogHeader>
+              <JsonView value={JSON.parse(release.configSnapshot)} style={monokaiTheme}></JsonView>
+            </DialogContent>
+          </Dialog>
         </>
       );
     },
@@ -77,12 +88,12 @@ const columns: ColumnDef<Config>[] = [
 
 export async function clientLoader({
   request,
-  params,
+  params
 }: Route.ClientLoaderArgs) {
   const url = new URL(request.url);
   const pageIndex = Number(url.searchParams.get("pageIndex") || 0);
   const pageSize = Number(url.searchParams.get("pageSize") || 10);
-  const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/config/appId/${params.appId}?page=${pageIndex}&size=${pageSize}`, {
+  const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/release/appId/${params.appId}?page=${pageIndex}&size=${pageSize}`, {
     method: "GET",
     headers: {
       "Accept": "application/json",
@@ -93,28 +104,10 @@ export async function clientLoader({
     toast.error("加载失败", {
       description: problemDetail?.detail
     });
-    return emptyPageResponse<Config>();
+    return emptyPageResponse<Release>();
   }
-  const data = await response.json() as PageResponse<Config>;
+  const data = await response.json() as PageResponse<Release>;
   return data;
-}
-
-export async function clientAction({
-  params
-}: Route.ClientActionArgs) {
-  const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/release/appId/${params.appId}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    }
-  });
-  if (!response.ok) {
-    const problemDetail = await response.json() as ProblemDetail;
-    toast.error("发布失败", {
-      description: problemDetail?.detail
-    });
-  }
-  toast.success("发布成功");
 }
 
 export function HydrateFallback() {
@@ -123,16 +116,15 @@ export function HydrateFallback() {
   );
 }
 
-export default function AppConfigs({
-  loaderData,
+export default function AppReleases({
+  loaderData
 }: Route.ComponentProps) {
-  const navigate = useNavigate();
   const [, setSearchParams] = useSearchParams();
-  const pagination: Pagination = {
+  const pagination = {
     pageIndex: loaderData.page.number,
     pageSize: loaderData.page.size,
   };
-  function handlePaginationChange(updater: Updater<Pagination>) {
+  function handlePaginationChange(updater: Updater<typeof pagination>) {
     const newState =
       typeof updater === "function"
         ? updater(pagination)
@@ -143,7 +135,7 @@ export default function AppConfigs({
       pageSize: newState.pageSize.toString(),
     });
   }
-  const configPage = loaderData satisfies PageResponse<Config>;
+  const configPage = loaderData satisfies PageResponse<Release>;
 
   const table = createReactTable({
     columns,
@@ -152,23 +144,14 @@ export default function AppConfigs({
     pagination: pagination,
     onPaginationChange: handlePaginationChange
   });
-
   return (
     <div className="container mx-auto py-5">
       <Outlet />
-      <div className="container mx-auto flex flex-row justify-between items-center mb-4">
-        <div className="flex flex-row items-center gap-2">
-          <Link to="/app">
-            <ArrowLeft />
-          </Link>
-          <h1 className="text-2xl font-bold">配置列表</h1>
-        </div>
-        <div className="flex justify-around gap-2 self-end">
-          <Form method="post">
-            <Button className="bg-[#84cc16] hover:bg-[#65a30d]" type="submit">发布</Button>
-          </Form>
-          <Button onClick={() => navigate(`action/create-config${location.search}`)}>新增</Button>
-        </div>
+      <div className="flex flex-row items-center gap-2">
+        <Link to="/app">
+          <ArrowLeft />
+        </Link>
+        <h1 className="text-2xl font-bold">发布列表</h1>
       </div>
       {/**Keep the same table */}
       {configPage.content.length ? (
@@ -184,9 +167,9 @@ export default function AppConfigs({
               <EmptyMedia variant="icon">
                 <Cog />
               </EmptyMedia>
-              <EmptyTitle>暂无配置</EmptyTitle>
+              <EmptyTitle>暂无发布</EmptyTitle>
               <EmptyDescription>
-                暂无配置，您可以刷新或新建。
+                暂无发布
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent className="flex flex-row justify-center items-center">
