@@ -1,33 +1,39 @@
-import type { Route } from "./+types/app";
-import { type ColumnDef, type Updater } from "@tanstack/react-table";
-import type { PageResponse, Pagination, ProblemDetail } from "~/types";
-import { DataTable } from "~/components/data-table";
+import type { Route } from "./+types/app_.$appId.config";
+import type { PageResponse, ProblemDetail } from "~/types";
+import type { ColumnDef, Updater } from "@tanstack/react-table";
 import { createReactTable, emptyPageResponse, timeStampToDateString } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
-import { DataTablePagination } from "~/components/data-table-pagination";
-import { Separator } from "~/components/ui/separator";
-import { Grid2x2Check, MoreHorizontal, RefreshCcwIcon } from "lucide-react";
-import { Form, Link, Outlet, useSearchParams, useSubmit } from "react-router";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "~/components/ui/dropdown-menu";
+import { ArrowLeft, Cog, MoreHorizontal, RefreshCcwIcon } from "lucide-react";
+import { DataTable } from "~/components/data-table";
+import { DataTablePagination } from "~/components/data-table-pagination";
+import { Button } from "~/components/ui/button";
+import { Separator } from "~/components/ui/separator";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty";
 import { toast } from "sonner";
 import { Loader } from "~/components/loader";
+import { Form, Link, Outlet, useSearchParams, useSubmit } from "react-router";
 
-type App = {
+type Config = {
   id: number;
-  name: string;
+  appId: number;
+  itemKey: string;
+  itemValue: string;
   timeCreate: bigint;
   timeUpdate: bigint;
 };
 
-const columns: ColumnDef<App>[] = [
+const columns: ColumnDef<Config>[] = [
   {
     "accessorKey": "id",
     "header": "ID",
   },
   {
-    "accessorKey": "name",
-    "header": "名称",
+    "accessorKey": "itemKey",
+    "header": "配置项",
+  },
+  {
+    "accessorKey": "itemValue",
+    "header": "配置值",
   },
   {
     "accessorKey": "timeCreate",
@@ -47,11 +53,11 @@ const columns: ColumnDef<App>[] = [
     id: "actions",
     "header": "操作",
     cell: ({ row }) => {
-      const app = row.original;
+      const config = row.original;
       const submit = useSubmit();
       return (
         <>
-          <DropdownMenu>
+          <DropdownMenu modal={false} >
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
                 <span className="sr-only">Open menu</span>
@@ -59,15 +65,15 @@ const columns: ColumnDef<App>[] = [
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <Link className="w-full" to={`/app/${app.id}/config`}>详情</Link>
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => submit(
+                {}, {
+                  action: `action/edit-config/${config.id}`
+                })}>编辑</DropdownMenuItem>
               <DropdownMenuItem variant="destructive" onClick={() => submit(
                 {}, {
-                  action: `action/delete-app/${app.id}`
-                })}>
-                删除
-              </DropdownMenuItem>
+                  action: `action/delete-config/${config.id}`
+                }
+              )}>删除</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </>
@@ -78,11 +84,12 @@ const columns: ColumnDef<App>[] = [
 
 export async function clientLoader({
   request,
+  params,
 }: Route.ClientLoaderArgs) {
   const url = new URL(request.url);
   const pageIndex = Number(url.searchParams.get("pageIndex") || 0);
   const pageSize = Number(url.searchParams.get("pageSize") || 10);
-  const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/app?page=${pageIndex}&size=${pageSize}`, {
+  const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/config/appId/${params.appId}?page=${pageIndex}&size=${pageSize}`, {
     method: "GET",
     headers: {
       "Accept": "application/json",
@@ -93,10 +100,28 @@ export async function clientLoader({
     toast.error("加载失败", {
       description: problemDetail?.detail
     });
-    return emptyPageResponse<App>();
+    return emptyPageResponse<Config>();
   }
-  const data = await response.json() as PageResponse<App>;
+  const data = await response.json() as PageResponse<Config>;
   return data;
+}
+
+export async function clientAction({
+  params
+}: Route.ClientActionArgs) {
+  const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/release/appId/${params.appId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    }
+  });
+  if (!response.ok) {
+    const problemDetail = await response.json() as ProblemDetail;
+    toast.error("发布失败", {
+      description: problemDetail?.detail
+    });
+  }
+  toast.success("发布成功");
 }
 
 export function HydrateFallback() {
@@ -105,15 +130,15 @@ export function HydrateFallback() {
   );
 }
 
-export default function App({
+export default function AppConfigDetail({
   loaderData,
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams();
-  const pagination: Pagination = {
+  const pagination = {
     pageIndex: loaderData.page.number,
     pageSize: loaderData.page.size,
   };
-  function handlePaginationChange(updater: Updater<Pagination>) {
+  function handlePaginationChange(updater: Updater<typeof pagination>) {
     const newState =
       typeof updater === "function"
         ? updater(pagination)
@@ -124,10 +149,11 @@ export default function App({
       pageSize: newState.pageSize.toString(),
     });
   }
-  const appPage = loaderData satisfies PageResponse<App>;
+  const configPage = loaderData satisfies PageResponse<Config>;
+
   const table = createReactTable({
     columns,
-    data: appPage.content,
+    data: configPage.content,
     pageCount: loaderData.page.totalPages,
     pagination: pagination,
     onPaginationChange: handlePaginationChange
@@ -137,12 +163,23 @@ export default function App({
     <div className="container mx-auto py-5">
       <Outlet />
       <div className="container mx-auto flex flex-row justify-between items-center mb-4">
-        <h1 className="mb-4 text-2xl font-bold">应用列表</h1>
-        <Form action="action/create-app">
-          <Button type="submit">新增应用</Button>
-        </Form>
+        <div className="flex flex-row items-center gap-2">
+          <Link to="/app">
+            <ArrowLeft />
+          </Link>
+          <h1 className="text-2xl font-bold">配置列表</h1>
+        </div>
+        <div className="flex justify-around gap-2 self-end">
+          <Form method="post">
+            <Button className="bg-[#84cc16] hover:bg-[#65a30d]" type="submit">发布</Button>
+          </Form>
+          <Form action="action/create-config">
+            <Button type="submit">新增</Button>
+          </Form>
+        </div>
       </div>
-      {appPage.content.length ? (
+      {/**Keep the same table */}
+      {configPage.content.length ? (
         <>
           <DataTable table={table} />
           <Separator className="my-4" />
@@ -153,11 +190,11 @@ export default function App({
           <Empty className="from-muted/50 to-background h-full bg-linear-to-b from-30%">
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <Grid2x2Check />
+                <Cog />
               </EmptyMedia>
-              <EmptyTitle>暂无应用</EmptyTitle>
+              <EmptyTitle>暂无配置</EmptyTitle>
               <EmptyDescription>
-                暂无应用，您可以刷新或新建。
+                暂无配置，您可以刷新或新建。
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent className="flex flex-row justify-center items-center">
