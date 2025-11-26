@@ -130,7 +130,7 @@ export function HydrateFallback() {
   );
 }
 
-export default function AppConfigDetail({
+export default function AppConfigs({
   loaderData,
 }: Route.ComponentProps) {
   const [, setSearchParams] = useSearchParams();
