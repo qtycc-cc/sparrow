@@ -138,7 +138,7 @@ export default function App({
     <div className="container mx-auto py-5">
       <Outlet />
       <div className="container mx-auto flex flex-row justify-between items-center mb-4">
-        <h1 className="mb-4 text-2xl font-bold">应用列表</h1>
+        <h1 className="text-2xl font-bold">应用列表</h1>
         <Button onClick={() => navigate(`action/create-app${location.search}`)}>新增应用</Button>
       </div>
       {appPage.content.length ? (

@@ -135,11 +135,11 @@ export default function AppReleases({
       pageSize: newState.pageSize.toString(),
     });
   }
-  const configPage = loaderData satisfies PageResponse<Release>;
+  const releasePage = loaderData satisfies PageResponse<Release>;
 
   const table = createReactTable({
     columns,
-    data: configPage.content,
+    data: releasePage.content,
     pageCount: loaderData.page.totalPages,
     pagination: pagination,
     onPaginationChange: handlePaginationChange
@@ -147,14 +147,14 @@ export default function AppReleases({
   return (
     <div className="container mx-auto py-5">
       <Outlet />
-      <div className="flex flex-row items-center gap-2">
+      <div className="flex flex-row items-center gap-2 mb-4">
         <Link to="/app">
           <ArrowLeft />
         </Link>
         <h1 className="text-2xl font-bold">发布列表</h1>
       </div>
       {/**Keep the same table */}
-      {configPage.content.length ? (
+      {releasePage.content.length ? (
         <>
           <DataTable table={table} />
           <Separator className="my-4" />
