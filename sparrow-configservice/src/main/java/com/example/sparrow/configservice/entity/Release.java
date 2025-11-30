@@ -30,7 +30,7 @@ public class Release extends BaseEntity {
      * e.g  {"key1":"value1"}
      */
     @Lob
-    @Column(name = "config_snapshot", nullable = false)
+    @Column(name = "config_snapshot", nullable = false, columnDefinition = "LONGTEXT")
     private String configSnapshot;
 
     @Override
