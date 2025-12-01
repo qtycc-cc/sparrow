@@ -51,6 +51,7 @@ const columns: ColumnDef<Release>[] = [
       const release = row.original;
       const navigate = useNavigate();
       const [showDialog, setShowDialog] = useState(false);
+      console.log(JSON.parse(release.configSnapshot));
       return (
         <>
           <DropdownMenu>
@@ -70,7 +71,7 @@ const columns: ColumnDef<Release>[] = [
             </DropdownMenuContent>
           </DropdownMenu>
           <Dialog open={showDialog} onOpenChange={setShowDialog}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] max-h-4/5 overflow-scroll">
               <DialogHeader>
                 <DialogTitle>JSON View</DialogTitle>
                 <DialogDescription>

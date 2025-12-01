@@ -10,6 +10,7 @@ import com.example.sparrow.configservice.repository.ReleaseRepository;
 import com.example.sparrow.configservice.util.TxUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@Slf4j
 @CrossOrigin
 @RestController
 @RequestMapping("/admin/release")
@@ -78,8 +80,19 @@ public class ReleaseController {
         List<Config> configs = configRepository.findByAppId(appId);
         Release release = new Release();
         release.setAppId(appId);
-        Map<String, String> configMap = configs.stream().collect(Collectors.toMap(Config::getItemKey, Config::getItemValue, (k1, k2) -> k1));
+        // avoid add backslash
+        Map<String, Object> configMap = configs.stream().collect(Collectors.toMap(Config::getItemKey, config -> {
+            String value = config.getItemValue();
+            try {
+                return objectMapper.readValue(value, Object.class);
+            } catch(Exception ex) {
+                log.warn("Error when parsing json {}", value);
+                return value;
+            }
+        }, (k1, k2) -> k1));
+        log.info("Current configMap is {}", configMap);
         release.setConfigSnapshot(objectMapper.writeValueAsString(configMap));
+        log.info("Current release is {}", release);
         releaseRepository.save(release);
         TxUtils.afterCommit(() -> applicationEventPublisher.publishEvent(new ReleaseEvent(this, appId, release.getId())));
         return ResponseEntity.ok(null);
