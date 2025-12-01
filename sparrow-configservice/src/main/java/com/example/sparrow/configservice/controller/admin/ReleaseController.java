@@ -90,9 +90,7 @@ public class ReleaseController {
                 return value;
             }
         }, (k1, k2) -> k1));
-        log.info("Current configMap is {}", configMap);
         release.setConfigSnapshot(objectMapper.writeValueAsString(configMap));
-        log.info("Current release is {}", release);
         releaseRepository.save(release);
         TxUtils.afterCommit(() -> applicationEventPublisher.publishEvent(new ReleaseEvent(this, appId, release.getId())));
         return ResponseEntity.ok(null);
