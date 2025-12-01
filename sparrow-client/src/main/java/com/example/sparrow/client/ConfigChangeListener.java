@@ -6,6 +6,9 @@ import com.example.sparrow.client.model.ConfigChangeEvent;
 import com.example.sparrow.client.spring.PlaceholderHelper;
 import com.example.sparrow.client.spring.SpringValue;
 import com.example.sparrow.client.spring.SpringValueRegistry;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.TypeConverter;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -22,6 +25,7 @@ public class ConfigChangeListener {
     private final TypeConverter typeConverter;
     private final PlaceholderHelper placeholderHelper;
     private final SpringValueRegistry springValueRegistry;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public ConfigChangeListener(ConfigurableListableBeanFactory beanFactory) {
         this.beanFactory = beanFactory;
@@ -52,15 +56,20 @@ public class ConfigChangeListener {
         }
     }
 
-    private void updateSpringValue(SpringValue springValue) throws InvocationTargetException, IllegalAccessException {
+    private void updateSpringValue(SpringValue springValue) throws InvocationTargetException, IllegalAccessException, JsonProcessingException {
         Object value = placeholderHelper
                 .resolvePropertyValue(beanFactory, springValue.getBeanName(), springValue.getPlaceholder());
-        if (springValue.isField()) {
-            value = this.typeConverter
-                    .convertIfNecessary(value, springValue.getTargetType().getClass(), springValue.getField());
+        if (springValue.isJson()) {
+            JavaType type = objectMapper.getTypeFactory().constructType(springValue.getTargetType());
+            value = objectMapper.readValue((String) value, type);
         } else {
-            value = this.typeConverter.convertIfNecessary(value, springValue.getTargetType().getClass(),
-                    springValue.getMethodParameter());
+            if (springValue.isField()) {
+                value = this.typeConverter
+                        .convertIfNecessary(value, springValue.getTargetType().getClass(), springValue.getField());
+            } else {
+                value = this.typeConverter.convertIfNecessary(value, springValue.getTargetType().getClass(),
+                        springValue.getMethodParameter());
+            }
         }
         springValue.update(value);
     }

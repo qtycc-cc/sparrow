@@ -20,23 +20,26 @@ public class SpringValue {
     private String key;
     private String placeholder;
     private Type targetType;
+    private boolean isJson;
 
-    public SpringValue(String key, String placeholder, Object bean, String beanName, Field field) {
+    public SpringValue(String key, String placeholder, Object bean, String beanName, Field field, boolean isJson) {
         this.beanRef = new WeakReference<>(bean);
         this.beanName = beanName;
         this.field = field;
         this.key = key;
         this.placeholder = placeholder;
         this.targetType = field.getGenericType();
+        this.isJson = isJson;
     }
 
-    public SpringValue(String key, String placeholder, Object bean, String beanName, Method method) {
+    public SpringValue(String key, String placeholder, Object bean, String beanName, Method method, boolean isJson) {
         this.beanRef = new WeakReference<>(bean);
         this.beanName = beanName;
         this.methodParameter = new MethodParameter(method, 0);
         this.key = key;
         this.placeholder = placeholder;
         this.targetType = method.getGenericParameterTypes()[0];
+        this.isJson = isJson;
     }
 
     public void update(Object newValue) throws IllegalAccessException, InvocationTargetException {

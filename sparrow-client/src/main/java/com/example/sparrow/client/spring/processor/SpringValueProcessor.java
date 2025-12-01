@@ -9,19 +9,14 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.PriorityOrdered;
-import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 @Slf4j
-public class SpringValueProcessor implements BeanPostProcessor, BeanFactoryAware, PriorityOrdered {
+public class SpringValueProcessor extends AbstractValueProcessor implements BeanFactoryAware {
     private BeanFactory beanFactory;
     private final PlaceholderHelper placeholderHelper;
     private final SpringValueRegistry springValueRegistry;
@@ -32,64 +27,50 @@ public class SpringValueProcessor implements BeanPostProcessor, BeanFactoryAware
     }
 
     @Override
-    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-        Class<?> clazz = bean.getClass();
-        List<Field> fields = new ArrayList<>();
-        ReflectionUtils.doWithFields(clazz, fields::add);
-        List<Method> methods = new ArrayList<>();
-        ReflectionUtils.doWithMethods(clazz, methods::add);
-
-        for (Field field : fields) {
-            Value value = field.getAnnotation(Value.class);
-            if (value == null) {
-                continue;
-            }
-            Set<String> keys = placeholderHelper.extractPlaceholderKeys(value.value());
-            if (keys.isEmpty()) {
-                log.debug("Can not find place ho");
-                continue;
-            }
-            for (String key : keys) {
-                SpringValue springValue = new SpringValue(key, value.value(), bean, beanName, field);
-                springValueRegistry.register(beanFactory, key, springValue);
-                log.debug("Monitoring {}", springValue);
-            }
-        }
-
-        for (Method method : methods) {
-            Value value = method.getAnnotation(Value.class);
-            if (value == null) {
-                continue;
-            }
-            if (method.getAnnotation(Bean.class) != null) {
-                continue;
-            }
-            if (method.getParameterTypes().length != 1) {
-                log.error("Ignore @Value setter {}.{}, expecting 1 parameter, actual {} parameters",
-                        bean.getClass().getName(), method.getName(), method.getParameterTypes().length);
-                continue;
-            }
-            Set<String> keys = placeholderHelper.extractPlaceholderKeys(value.value());
-
-            if (keys.isEmpty()) {
-                continue;
-            }
-            for (String key : keys) {
-                SpringValue springValue = new SpringValue(key, value.value(), bean, beanName, method);
-                springValueRegistry.register(beanFactory, key, springValue);
-                log.debug("Monitoring {}", springValue);
-            }
-        }
-        return bean;
-    }
-
-    @Override
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
     }
 
     @Override
-    public int getOrder() {
-        return PriorityOrdered.LOWEST_PRECEDENCE;
+    protected void processField(Object bean, String beanName, Field field) {
+        Value value = field.getAnnotation(Value.class);
+        if (value == null) {
+            return;
+        }
+        Set<String> keys = placeholderHelper.extractPlaceholderKeys(value.value());
+        if (keys.isEmpty()) {
+            return;
+        }
+        for (String key : keys) {
+            SpringValue springValue = new SpringValue(key, value.value(), bean, beanName, field, false);
+            springValueRegistry.register(beanFactory, key, springValue);
+            log.debug("Monitoring {}", springValue);
+        }
+    }
+
+    @Override
+    protected void processMethod(Object bean, String beanName, Method method) {
+        Value value = method.getAnnotation(Value.class);
+        if (value == null) {
+            return;
+        }
+        if (method.getAnnotation(Bean.class) != null) {
+            return;
+        }
+        if (method.getParameterTypes().length != 1) {
+            log.error("Ignore @Value setter {}.{}, expecting 1 parameter, actual {} parameters",
+                    bean.getClass().getName(), method.getName(), method.getParameterTypes().length);
+            return;
+        }
+        Set<String> keys = placeholderHelper.extractPlaceholderKeys(value.value());
+
+        if (keys.isEmpty()) {
+            return;
+        }
+        for (String key : keys) {
+            SpringValue springValue = new SpringValue(key, value.value(), bean, beanName, method, false);
+            springValueRegistry.register(beanFactory, key, springValue);
+            log.debug("Monitoring {}", springValue);
+        }
     }
 }

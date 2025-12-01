@@ -1,5 +1,6 @@
 package com.example.sparrow.demo;
 
+import com.example.sparrow.client.annotation.SparrowJsonValue;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -102,4 +103,11 @@ public class TestProperties {
 
     @Value("#{${map.value}}")
     private Map<String, String> map;
+
+    @SparrowJsonValue("${person.value")
+    private Person person;
+    @SparrowJsonValue("${person.list}")
+    private List<Person> persons;
+    @SparrowJsonValue("${person.map}")
+    private Map<String, Person> personMap;
 }

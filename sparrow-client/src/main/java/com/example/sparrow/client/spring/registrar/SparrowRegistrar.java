@@ -1,5 +1,6 @@
 package com.example.sparrow.client.spring.registrar;
 
+import com.example.sparrow.client.spring.processor.SparrowJsonValueProcessor;
 import com.example.sparrow.client.spring.processor.SparrowPropertySourceProcessor;
 import com.example.sparrow.client.spring.processor.SpringValueProcessor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ public class SparrowRegistrar implements BeanDefinitionRegistryPostProcessor {
         registry(registry, PropertySourcesPlaceholderConfigurer.class, Map.of("order", 0));
         registry(registry, SparrowPropertySourceProcessor.class, null);
         registry(registry, SpringValueProcessor.class, null);
+        registry(registry, SparrowJsonValueProcessor.class, null);
     }
 
     private void registry(BeanDefinitionRegistry registry, Class<?> beanClass, Map<String, Object> extra) {
