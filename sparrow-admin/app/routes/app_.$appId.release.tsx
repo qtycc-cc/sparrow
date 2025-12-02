@@ -25,6 +25,33 @@ type Release = {
   timeUpdate: bigint;
 };
 
+function tryParseJSON(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+
+  try {
+    const parsed = JSON.parse(value);
+    if (typeof parsed === "string") {
+      return tryParseJSON(parsed);
+    }
+    return parsed;
+  } catch {
+    return value;
+  }
+}
+
+function parseJSON(jsonString: string): Record<string, unknown> {
+  const obj = JSON.parse(jsonString);
+
+  const result: Record<string, unknown> = {};
+
+  for (const key in obj) {
+    const value = obj[key];
+    result[key] = tryParseJSON(value);
+  }
+
+  return result;
+}
+
 const columns: ColumnDef<Release>[] = [
   {
     "accessorKey": "id",
@@ -51,7 +78,6 @@ const columns: ColumnDef<Release>[] = [
       const release = row.original;
       const navigate = useNavigate();
       const [showDialog, setShowDialog] = useState(false);
-      console.log(JSON.parse(release.configSnapshot));
       return (
         <>
           <DropdownMenu>
@@ -78,7 +104,7 @@ const columns: ColumnDef<Release>[] = [
                   JSON格式化展示
                 </DialogDescription>
               </DialogHeader>
-              <JsonView value={JSON.parse(release.configSnapshot)} style={monokaiTheme}></JsonView>
+              <JsonView value={parseJSON(release.configSnapshot)} style={monokaiTheme}></JsonView>
             </DialogContent>
           </Dialog>
         </>
