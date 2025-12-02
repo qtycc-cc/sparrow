@@ -16,7 +16,7 @@ import java.util.Objects;
 @ToString
 @RequiredArgsConstructor
 @Entity
-@Table(name = "sparrow_app")
+@Table(name = "app", schema = "sparrow")
 public class App extends BaseEntity {
     @Column(name = "name", nullable = false, unique = true)
     private String name;

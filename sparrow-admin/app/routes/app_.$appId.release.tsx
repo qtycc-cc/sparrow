@@ -20,37 +20,11 @@ import { useState } from "react";
 type Release = {
   id: number;
   appId: number;
-  configSnapshot: string
+  configSnapshot: string;
+  configSnapshotView: Record<string, object>;
   timeCreate: bigint;
   timeUpdate: bigint;
 };
-
-function tryParseJSON(value: unknown): unknown {
-  if (typeof value !== "string") return value;
-
-  try {
-    const parsed = JSON.parse(value);
-    if (typeof parsed === "string") {
-      return tryParseJSON(parsed);
-    }
-    return parsed;
-  } catch {
-    return value;
-  }
-}
-
-function parseJSON(jsonString: string): Record<string, unknown> {
-  const obj = JSON.parse(jsonString);
-
-  const result: Record<string, unknown> = {};
-
-  for (const key in obj) {
-    const value = obj[key];
-    result[key] = tryParseJSON(value);
-  }
-
-  return result;
-}
 
 const columns: ColumnDef<Release>[] = [
   {
@@ -104,7 +78,7 @@ const columns: ColumnDef<Release>[] = [
                   JSON格式化展示
                 </DialogDescription>
               </DialogHeader>
-              <JsonView value={parseJSON(release.configSnapshot)} style={monokaiTheme}></JsonView>
+              <JsonView value={release.configSnapshotView} style={monokaiTheme}></JsonView>
             </DialogContent>
           </Dialog>
         </>

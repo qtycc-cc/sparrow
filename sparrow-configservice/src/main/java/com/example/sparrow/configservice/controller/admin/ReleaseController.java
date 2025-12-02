@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,6 +67,7 @@ public class ReleaseController {
         Release release = new Release();
         release.setAppId(appId);
         release.setConfigSnapshot(toRelease.getConfigSnapshot());
+        release.setConfigSnapshotView(toRelease.getConfigSnapshotView());
         releaseRepository.save(release);
         TxUtils.afterCommit(() -> applicationEventPublisher.publishEvent(new ReleaseEvent(this, appId, release.getId())));
         return ResponseEntity.ok(null);
@@ -80,7 +82,13 @@ public class ReleaseController {
         release.setAppId(appId);
         // avoid add backslash
         Map<String, String> configMap = configs.stream().collect(Collectors.toMap(Config::getItemKey, Config::getItemValue, (k1, k2) -> k1));
+        Map<String, Object> configJsonMap = new HashMap<>();
+        for (Map.Entry<String, String> entry : configMap.entrySet()) {
+            Object value = objectMapper.readValue(entry.getValue(), Object.class);
+            configJsonMap.put(entry.getKey(), value);
+        }
         release.setConfigSnapshot(objectMapper.writeValueAsString(configMap));
+        release.setConfigSnapshotView(configJsonMap);
         releaseRepository.save(release);
         TxUtils.afterCommit(() -> applicationEventPublisher.publishEvent(new ReleaseEvent(this, appId, release.getId())));
         return ResponseEntity.ok(null);

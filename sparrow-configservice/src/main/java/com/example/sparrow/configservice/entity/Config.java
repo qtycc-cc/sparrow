@@ -16,7 +16,7 @@ import java.util.Objects;
 @ToString
 @RequiredArgsConstructor
 @Entity
-@Table(name = "sparrow_config")
+@Table(name = "config", schema = "sparrow")
 public class Config extends BaseEntity {
     @Column(name = "app_id", nullable = false)
     private Long appId;
