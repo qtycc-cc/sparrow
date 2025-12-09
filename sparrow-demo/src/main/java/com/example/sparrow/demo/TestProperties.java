@@ -104,7 +104,7 @@ public class TestProperties {
     @Value("#{${map.value}}")
     private Map<String, String> map;
 
-    @SparrowJsonValue("${person.value")
+    @SparrowJsonValue("${person.value}")
     private Person person;
     @SparrowJsonValue("${person.list}")
     private List<Person> persons;
