@@ -12,7 +12,6 @@ import com.example.sparrow.configservice.repository.ReleaseRepository;
 import com.example.sparrow.configservice.service.AppService;
 import com.example.sparrow.configservice.util.PropertyUtil;
 import com.example.sparrow.configservice.vo.AppVo;
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -31,8 +30,6 @@ public class AppServiceImpl implements AppService {
     private ConfigRepository configRepository;
     @Autowired
     private ReleaseRepository releaseRepository;
-
-    private static final TypeReference<Map<String, Object>> MAP_TYPE_REFERENCE =  new TypeReference<>() {};
 
     @Override
     public PagedModel<AppVo> page(Pageable pageable) {
