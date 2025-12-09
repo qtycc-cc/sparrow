@@ -1,6 +1,7 @@
 package com.example.sparrow.configservice.controller.admin;
 
 import com.example.sparrow.configservice.dto.AppCreateDto;
+import com.example.sparrow.configservice.dto.AppUpdateDto;
 import com.example.sparrow.configservice.service.AppService;
 import com.example.sparrow.configservice.vo.AppVo;
 import jakarta.validation.Valid;
@@ -35,6 +36,12 @@ public class AppController {
     @PostMapping
     public ResponseEntity<Void> create(@RequestBody @Valid AppCreateDto dto) {
         appService.create(dto);
+        return ResponseEntity.ok(null);
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<Void> update(@PathVariable Long id, @RequestBody @Valid AppUpdateDto dto) {
+        appService.update(id, dto);
         return ResponseEntity.ok(null);
     }
 

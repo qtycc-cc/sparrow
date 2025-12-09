@@ -21,7 +21,7 @@ public class Config extends BaseEntity {
     @Column(name = "app_id", nullable = false)
     private Long appId;
 
-    @Column(name = "item_key", nullable = false, unique = true)
+    @Column(name = "item_key", nullable = false)
     private String itemKey;
 
     @Column(name = "item_value")
