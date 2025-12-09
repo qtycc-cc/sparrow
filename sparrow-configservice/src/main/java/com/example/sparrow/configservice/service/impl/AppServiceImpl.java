@@ -78,6 +78,7 @@ public class AppServiceImpl implements AppService {
             config.setItemValue(String.valueOf(entry.getValue()));
             configs.add(config);
         }
+        app.setConfigFile(dto.getConfigFile());
         // Simplified by deleting all and save new configs
         configRepository.deleteByAppId(app.getId());
         configRepository.flush();

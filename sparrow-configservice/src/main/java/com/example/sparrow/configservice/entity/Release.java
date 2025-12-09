@@ -30,13 +30,6 @@ public class Release extends BaseEntity {
     @Column(name = "config_snapshot", nullable = false, columnDefinition = "text")
     private String configSnapshot;
 
-    // cause spring use string to resolve property so can not directly store json
-    // use jsonb to store extra json view for front end
-    @Type(JsonBinaryType.class)
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "config_snapshot_view", nullable = false, columnDefinition = "jsonb")
-    private Map<String, Object> configSnapshotView;
-
     @Override
     public final boolean equals(Object o) {
         if (this == o) return true;
