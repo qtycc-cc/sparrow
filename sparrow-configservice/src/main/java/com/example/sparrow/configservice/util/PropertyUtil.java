@@ -4,6 +4,9 @@ import lombok.SneakyThrows;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +24,9 @@ public class PropertyUtil {
     @SneakyThrows
     public static Map<String, Object> extractProperties(String propertiesString) {
         Properties properties = new Properties();
-        properties.load(new ByteArrayInputStream(propertiesString.getBytes()));
+        try (Reader reader = new InputStreamReader(new ByteArrayInputStream(propertiesString.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8)) {
+            properties.load(reader);
+        }
         Map<String, Object> result = new LinkedHashMap<>();
         for (String name : properties.stringPropertyNames()) {
             result.put(name, properties.getProperty(name));
