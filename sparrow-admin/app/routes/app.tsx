@@ -1,24 +1,39 @@
 import type { Route } from "./+types/app";
 import { type ColumnDef, type Updater } from "@tanstack/react-table";
-import type { PageResponse, Pagination, ProblemDetail } from "~/types";
+import type { PageResponse, Pagination, ProblemDetail, App } from "~/types";
 import { DataTable } from "~/components/data-table";
 import { createReactTable, emptyPageResponse, timeStampToDateString } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { DataTablePagination } from "~/components/data-table-pagination";
 import { Separator } from "~/components/ui/separator";
 import { Grid2x2Check, MoreHorizontal, RefreshCcwIcon } from "lucide-react";
-import { Link, Outlet, useNavigate, useSearchParams } from "react-router";
+import {Form, Link, useSearchParams} from "react-router";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "~/components/ui/dropdown-menu";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty";
 import { toast } from "sonner";
 import { Loader } from "~/components/loader";
-
-type App = {
-  id: number;
-  name: string;
-  timeCreate: bigint;
-  timeUpdate: bigint;
-};
+import {useState} from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "~/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "~/components/ui/dialog";
+import {Label} from "~/components/ui/label";
+import {Input} from "~/components/ui/input";
+import {RadioGroup, RadioGroupItem} from "~/components/ui/radio-group";
 
 const columns: ColumnDef<App>[] = [
   {
@@ -48,10 +63,10 @@ const columns: ColumnDef<App>[] = [
     "header": "操作",
     cell: ({ row }) => {
       const app = row.original;
-      const navigate = useNavigate();
+      const [showDeleteDialog, setShowDeleteDialog] = useState(false);
       return (
         <>
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
                 <span className="sr-only">Open menu</span>
@@ -65,11 +80,30 @@ const columns: ColumnDef<App>[] = [
               <DropdownMenuItem>
                 <Link className="w-full" to={`/app/${app.id}/release`}>发布详情</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onClick={() => navigate(`/app/action/delete-app/${app.id}${location.search}`)}>
+              <DropdownMenuItem variant="destructive" onClick={() => setShowDeleteDialog(true)}>
                 删除
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>确认删除？</AlertDialogTitle>
+                <AlertDialogDescription>
+                  此操作无法撤销。这将永久删除该应用及其所有配置和发布。
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <Form method="delete">
+                  <input hidden name={"id"} value={app.id}></input>
+                  <AlertDialogAction type="submit" name="action" value="delete-app">
+                    确认删除
+                  </AlertDialogAction>
+                </Form>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </>
       );
     },
@@ -95,8 +129,46 @@ export async function clientLoader({
     });
     return emptyPageResponse<App>();
   }
-  const data = await response.json() as PageResponse<App>;
-  return data;
+  return await response.json() as PageResponse<App>;
+}
+
+export async function clientAction({
+  request,
+}: Route.ClientActionArgs) {
+  const formData = await request.formData();
+  const { action, ...value } = Object.fromEntries(formData);
+  if (action === "create-app") {
+    const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/app`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: value.name,
+        format: value.format,
+      }),
+    });
+    if (!response.ok) {
+      const problemDetail = await response.json() as ProblemDetail;
+      toast.error("创建失败", {
+        description: problemDetail?.detail
+      });
+    } else {
+      toast.success("创建成功");
+    }
+  } else if (action === "delete-app") {
+    const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/app/${value.id}`, {
+      method: "DELETE"
+    });
+    if (!response.ok) {
+      const problemDetail = await response.json() as ProblemDetail;
+      toast.error("删除失败", {
+        description: problemDetail?.detail
+      });
+    } else {
+      toast.success("删除成功");
+    }
+  }
 }
 
 export function HydrateFallback() {
@@ -108,7 +180,7 @@ export function HydrateFallback() {
 export default function App({
   loaderData,
 }: Route.ComponentProps) {
-  const navigate = useNavigate();
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [, setSearchParams] = useSearchParams();
   const pagination: Pagination = {
     pageIndex: loaderData.page.number,
@@ -136,10 +208,43 @@ export default function App({
 
   return (
     <div className="container mx-auto py-5">
-      <Outlet />
       <div className="container mx-auto flex flex-row justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">应用列表</h1>
-        <Button onClick={() => navigate(`action/create-app${location.search}`)}>新增应用</Button>
+        <Button onClick={() => setShowCreateDialog(true)}>新增应用</Button>
+        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+          <DialogContent className="sm:max-w-[425px]">
+            <Form method="post" onSubmit={() => setShowCreateDialog(false)}>
+              <DialogHeader>
+                <DialogTitle>新增应用</DialogTitle>
+              </DialogHeader>
+              <DialogDescription className="mb-4 mt-4 text-1xl">
+                新增应用
+              </DialogDescription>
+              <div className="grid gap-4">
+                <div className="grid gap-3">
+                  <Label htmlFor="appName">name</Label>
+                  <Input required id="appName" name="name" />
+                  <RadioGroup name="format" defaultValue="PROPERTIES">
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="PROPERTIES" id="properties" />
+                      <Label htmlFor="properties">properties</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="YAML" id="yaml" />
+                      <Label htmlFor="yaml">yaml</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              </div>
+              <DialogFooter className="mt-4">
+                <DialogClose asChild>
+                  <Button variant="outline">取消</Button>
+                </DialogClose>
+                <Button type="submit" name={"action"} value={"create-app"}>保存</Button>
+              </DialogFooter>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
       {appPage.content.length ? (
         <>

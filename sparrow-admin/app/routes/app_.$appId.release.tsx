@@ -1,10 +1,10 @@
-import type { PageResponse, ProblemDetail } from "~/types";
+import type { PageResponse, ProblemDetail, Release } from "~/types";
 import type { Route } from "./+types/app_.$appId.release";
 import { createReactTable, emptyPageResponse, timeStampToDateString } from "~/lib/utils";
 import { toast } from "sonner";
 import type { ColumnDef, Updater } from "@tanstack/react-table";
 import { Loader } from "~/components/loader";
-import { Link, Outlet, useNavigate, useSearchParams } from "react-router";
+import {Form, useNavigate, useSearchParams} from "react-router";
 import { DataTable } from "~/components/data-table";
 import { Separator } from "~/components/ui/separator";
 import { DataTablePagination } from "~/components/data-table-pagination";
@@ -16,15 +16,15 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { monokaiTheme } from "@uiw/react-json-view/monokai";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "~/components/ui/dropdown-menu";
 import { useState } from "react";
-
-type Release = {
-  id: number;
-  appId: number;
-  configSnapshot: string;
-  configSnapshotView: Record<string, object>;
-  timeCreate: bigint;
-  timeUpdate: bigint;
-};
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "~/components/ui/alert-dialog";
 
 const columns: ColumnDef<Release>[] = [
   {
@@ -50,11 +50,11 @@ const columns: ColumnDef<Release>[] = [
     "header": "操作",
     cell: ({ row }) => {
       const release = row.original;
-      const navigate = useNavigate();
       const [showDialog, setShowDialog] = useState(false);
+      const [showRollBackDialog, setShowRollBackDialog] = useState(false);
       return (
         <>
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
                 <span className="sr-only">Open menu</span>
@@ -65,22 +65,41 @@ const columns: ColumnDef<Release>[] = [
               <DropdownMenuItem onClick={() => setShowDialog(true)}>
                 展示
               </DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onClick={() => navigate(`action/rollback/${release.id}${location.search}`)}>
+              <DropdownMenuItem variant="destructive" onClick={() => setShowRollBackDialog(true)}>
                 回滚
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Dialog open={showDialog} onOpenChange={setShowDialog}>
-            <DialogContent className="sm:max-w-[425px] max-h-4/5 overflow-scroll">
+            <DialogContent>
               <DialogHeader>
                 <DialogTitle>JSON View</DialogTitle>
                 <DialogDescription>
                   JSON格式化展示
                 </DialogDescription>
               </DialogHeader>
-              <JsonView value={release.configSnapshotView} style={monokaiTheme}></JsonView>
+              <JsonView value={JSON.parse(release.configSnapshot)} style={monokaiTheme}></JsonView>
             </DialogContent>
           </Dialog>
+          <AlertDialog open={showRollBackDialog} onOpenChange={setShowRollBackDialog}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>确认回滚？</AlertDialogTitle>
+                <AlertDialogDescription>
+                  回滚最新配置（如果您选择最新的发布）或者回滚到您所选的发布
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <Form method="post">
+                  <input hidden readOnly name={"id"} value={release.id}></input>
+                  <AlertDialogAction type="submit" name="action" value="rollback-release">
+                    确认回滚
+                  </AlertDialogAction>
+                </Form>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </>
       );
     },
@@ -107,8 +126,7 @@ export async function clientLoader({
     });
     return emptyPageResponse<Release>();
   }
-  const data = await response.json() as PageResponse<Release>;
-  return data;
+  return await response.json() as PageResponse<Release>;
 }
 
 export function HydrateFallback() {
@@ -117,9 +135,31 @@ export function HydrateFallback() {
   );
 }
 
+export async function clientAction({
+  request,
+  params,
+}: Route.ClientActionArgs) {
+  const formData = await request.formData();
+  const { action, ...value } = Object.fromEntries(formData);
+  if (action === "rollback-release") {
+    const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/release/appId/${params.appId}/rollback?toId=${value.id}`, {
+      method: "POST"
+    });
+    if (!response.ok) {
+      const problemDetail = await response.json() as ProblemDetail;
+      toast.error("回滚失败", {
+        description: problemDetail?.detail
+      });
+    } else {
+      toast.success("回滚成功");
+    }
+  }
+}
+
 export default function AppReleases({
   loaderData
 }: Route.ComponentProps) {
+  const navigate = useNavigate();
   const [, setSearchParams] = useSearchParams();
   const pagination = {
     pageIndex: loaderData.page.number,
@@ -147,11 +187,8 @@ export default function AppReleases({
   });
   return (
     <div className="container mx-auto py-5">
-      <Outlet />
       <div className="flex flex-row items-center gap-2 mb-4">
-        <Link to="/app">
-          <ArrowLeft />
-        </Link>
+        <ArrowLeft onClick={() => navigate(-1)} />
         <h1 className="text-2xl font-bold">发布列表</h1>
       </div>
       {/**Keep the same table */}

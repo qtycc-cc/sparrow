@@ -20,6 +20,22 @@ export type PageResponse<T> = {
   }
 };
 
+export type App = {
+  id: number;
+  name: string;
+  format: "PROPERTIES" | "YAML";
+  configFile: string;
+  timeCreate: bigint;
+  timeUpdate: bigint;
+};
+
+export type Release = {
+  id: number;
+  configSnapshot: string;
+  timeCreate: bigint;
+  timeUpdate: bigint;
+};
+
 export type Pagination = {
   pageIndex: number;
   pageSize: number;
