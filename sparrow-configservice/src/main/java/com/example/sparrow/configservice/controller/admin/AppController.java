@@ -1,19 +1,13 @@
 package com.example.sparrow.configservice.controller.admin;
 
-import com.example.sparrow.configservice.dto.AppDto;
-import com.example.sparrow.configservice.entity.App;
-import com.example.sparrow.configservice.exception.ResourceNotFoundException;
-import com.example.sparrow.configservice.repository.AppRepository;
-import com.example.sparrow.configservice.repository.ConfigRepository;
-import com.example.sparrow.configservice.repository.ReleaseRepository;
+import com.example.sparrow.configservice.dto.AppCreateDto;
+import com.example.sparrow.configservice.service.AppService;
+import com.example.sparrow.configservice.vo.AppVo;
 import jakarta.validation.Valid;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin
@@ -21,43 +15,32 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/admin/app")
 public class AppController {
     @Autowired
-    private AppRepository appRepository;
-    @Autowired
-    private ConfigRepository configRepository;
-    @Autowired
-    private ReleaseRepository releaseRepository;
+    private AppService appService;
 
     @GetMapping
-    public ResponseEntity<PagedModel<App>> page(Pageable pageable) {
-        Page<App> apps = appRepository.findAll(pageable);
-        return ResponseEntity.ok(new PagedModel<>(apps));
+    public ResponseEntity<PagedModel<AppVo>> page(Pageable pageable) {
+        return ResponseEntity.ok(appService.page(pageable));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<App> getOne(@PathVariable Long id) {
-        return ResponseEntity.ok(appRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("App not found")));
+    public ResponseEntity<AppVo> getOne(@PathVariable Long id) {
+        return ResponseEntity.ok(appService.findOne(id));
     }
 
     @GetMapping("/name/{name}")
-    public ResponseEntity<App> getOne(@PathVariable String name) {
-        return ResponseEntity.ok(appRepository.findByName(name).orElseThrow(() -> new ResourceNotFoundException("App not found")));
+    public ResponseEntity<AppVo> getOne(@PathVariable String name) {
+        return ResponseEntity.ok(appService.findOne(name));
     }
 
     @PostMapping
-    @Transactional(rollbackFor = Exception.class)
-    public ResponseEntity<Void> create(@RequestBody @Valid AppDto dto) {
-        App app = new App();
-        BeanUtils.copyProperties(dto, app);
-        appRepository.save(app);
+    public ResponseEntity<Void> create(@RequestBody @Valid AppCreateDto dto) {
+        appService.create(dto);
         return ResponseEntity.ok(null);
     }
 
     @DeleteMapping("/{id}")
-    @Transactional(rollbackFor = Exception.class)
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        appRepository.deleteById(id);
-        configRepository.deleteByAppId(id);
-        releaseRepository.deleteByAppId(id);
+        appService.delete(id);
         return ResponseEntity.ok(null);
     }
 }

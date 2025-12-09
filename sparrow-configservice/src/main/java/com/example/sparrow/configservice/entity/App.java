@@ -1,8 +1,7 @@
 package com.example.sparrow.configservice.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import com.example.sparrow.configservice.enums.Format;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -20,6 +19,11 @@ import java.util.Objects;
 public class App extends BaseEntity {
     @Column(name = "name", nullable = false, unique = true)
     private String name;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "format", nullable = false)
+    private Format format;
+    @Column(name = "config_file", nullable = false, columnDefinition = "text")
+    private String configFile;
 
     @Override
     public final boolean equals(Object o) {
