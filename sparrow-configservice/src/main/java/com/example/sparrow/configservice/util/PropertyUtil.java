@@ -1,9 +1,9 @@
 package com.example.sparrow.configservice.util;
 
-import lombok.SneakyThrows;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -21,11 +21,12 @@ public class PropertyUtil {
         return result;
     }
 
-    @SneakyThrows
     public static Map<String, Object> extractProperties(String propertiesString) {
         Properties properties = new Properties();
         try (Reader reader = new InputStreamReader(new ByteArrayInputStream(propertiesString.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8)) {
             properties.load(reader);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         Map<String, Object> result = new LinkedHashMap<>();
         for (String name : properties.stringPropertyNames()) {

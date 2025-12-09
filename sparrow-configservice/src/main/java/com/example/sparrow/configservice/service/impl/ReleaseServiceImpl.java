@@ -10,8 +10,8 @@ import com.example.sparrow.configservice.repository.ReleaseRepository;
 import com.example.sparrow.configservice.service.ReleaseService;
 import com.example.sparrow.configservice.util.TxUtils;
 import com.example.sparrow.configservice.vo.ReleaseVo;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,7 +73,6 @@ public class ReleaseServiceImpl implements ReleaseService {
     }
 
     @Override
-    @SneakyThrows
     @Transactional(rollbackFor = Exception.class)
     public void release(Long appId) {
         appRepository.findById(appId).orElseThrow(() -> new ResourceNotFoundException("App not found"));
@@ -82,7 +81,11 @@ public class ReleaseServiceImpl implements ReleaseService {
         release.setAppId(appId);
         // avoid add backslash
         Map<String, String> configMap = configs.stream().collect(Collectors.toMap(Config::getItemKey, Config::getItemValue, (k1, k2) -> k1));
-        release.setConfigSnapshot(objectMapper.writeValueAsString(configMap));
+        try {
+            release.setConfigSnapshot(objectMapper.writeValueAsString(configMap));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
         releaseRepository.save(release);
         TxUtils.afterCommit(() -> applicationEventPublisher.publishEvent(new ReleaseEvent(this, appId, release.getId())));
     }
