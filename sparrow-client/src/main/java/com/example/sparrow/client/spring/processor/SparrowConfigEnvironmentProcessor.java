@@ -8,7 +8,7 @@ import org.springframework.util.StringUtils;
 
 public class SparrowConfigEnvironmentProcessor implements EnvironmentPostProcessor, Ordered {
     public static final String[] SPARROW_SYSTEM_PROPERTIES = new String[]{
-            "sparrow.appName",
+            "sparrow.namespaceNames",
             "sparrow.serverUrl"
     };
 

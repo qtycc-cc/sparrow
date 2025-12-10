@@ -18,8 +18,8 @@ import java.util.Objects;
 @Entity
 @Table(name = "release", schema = "sparrow")
 public class Release extends BaseEntity {
-    @Column(name = "app_id", nullable = false)
-    private Long appId;
+    @Column(name = "namespace_id", nullable = false)
+    private Long namespaceId;
 
     // can not use log in postgresql
     @Column(name = "config_snapshot", nullable = false, columnDefinition = "text")

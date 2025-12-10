@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class AppCreateDto {
+public class NamespaceCreateDto {
     @NotBlank(message = "App name must not be blank")
     private String name;
     @NotNull(message = "App config file must not be null")

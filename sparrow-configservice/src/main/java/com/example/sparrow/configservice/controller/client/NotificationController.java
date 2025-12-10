@@ -1,10 +1,10 @@
 package com.example.sparrow.configservice.controller.client;
 
-import com.example.sparrow.configservice.entity.App;
+import com.example.sparrow.configservice.entity.Namespace;
 import com.example.sparrow.configservice.entity.Release;
 import com.example.sparrow.configservice.event.ReleaseEvent;
 import com.example.sparrow.configservice.exception.ResourceNotFoundException;
-import com.example.sparrow.configservice.repository.AppRepository;
+import com.example.sparrow.configservice.repository.NamespaceRepository;
 import com.example.sparrow.configservice.repository.ReleaseRepository;
 import com.example.sparrow.configservice.util.EntityManagerUtils;
 import com.google.common.collect.HashMultimap;
@@ -32,23 +32,23 @@ public class NotificationController {
             Multimaps.synchronizedSetMultimap(HashMultimap.create());
 
     @Autowired
-    private AppRepository appRepository;
+    private NamespaceRepository namespaceRepository;
     @Autowired
     private ReleaseRepository releaseRepository;
     @Autowired
     private EntityManagerUtils entityManagerUtils;
 
-    @GetMapping("/appName/{appName}/notificationId/{notificationId}")
+    @GetMapping("/namespaceName/{namespaceName}/notificationId/{notificationId}")
     public DeferredResult<ResponseEntity<Long>> notification(
-            @PathVariable String appName,
+            @PathVariable String namespaceName,
             @PathVariable Long notificationId
     ) {
-        App app = appRepository.findByName(appName).orElseThrow(() -> new ResourceNotFoundException("App not found"));
-        Long appId = app.getId();
+        Namespace namespace = namespaceRepository.findByName(namespaceName).orElseThrow(() -> new ResourceNotFoundException("Namespace not found"));
+        Long namespaceId = namespace.getId();
         DeferredResult<ResponseEntity<Long>> deferredResult = new DeferredResult<>(LONG_POLL_TIMEOUT_IN_MILLISECOND, new ResponseEntity<>(HttpStatus.NOT_MODIFIED));
-        deferredResult.onCompletion(() -> waiting.remove(appId, deferredResult));
-        waiting.put(appId, deferredResult);
-        Optional<Release> releaseOptional = releaseRepository.findFirstByAppIdOrderByIdDesc(appId);
+        deferredResult.onCompletion(() -> waiting.remove(namespaceId, deferredResult));
+        waiting.put(namespaceId, deferredResult);
+        Optional<Release> releaseOptional = releaseRepository.findFirstByNamespaceIdOrderByIdDesc(namespaceId);
         entityManagerUtils.closeEntityManager();
         releaseOptional.ifPresent(release -> {
             if (release.getId() > notificationId) {
@@ -62,7 +62,7 @@ public class NotificationController {
     @EventListener(ReleaseEvent.class)
     public void handleRelease(ReleaseEvent releaseEvent) {
         log.info("Handle release event: {}", releaseEvent);
-        List<DeferredResult<ResponseEntity<Long>>> results = new ArrayList<>(waiting.get(releaseEvent.getAppId()));
+        List<DeferredResult<ResponseEntity<Long>>> results = new ArrayList<>(waiting.get(releaseEvent.getNamespaceId()));
         for (DeferredResult<ResponseEntity<Long>> deferredResult : results) {
             deferredResult.setResult(new ResponseEntity<>(releaseEvent.getReleaseId(), HttpStatus.OK));
         }

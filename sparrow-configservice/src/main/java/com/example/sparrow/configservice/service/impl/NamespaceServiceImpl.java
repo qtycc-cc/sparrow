@@ -1,17 +1,17 @@
 package com.example.sparrow.configservice.service.impl;
 
-import com.example.sparrow.configservice.dto.AppCreateDto;
-import com.example.sparrow.configservice.dto.AppUpdateDto;
-import com.example.sparrow.configservice.entity.App;
+import com.example.sparrow.configservice.dto.NamespaceCreateDto;
+import com.example.sparrow.configservice.dto.NamespaceUpdateDto;
 import com.example.sparrow.configservice.entity.Config;
+import com.example.sparrow.configservice.entity.Namespace;
 import com.example.sparrow.configservice.enums.Format;
 import com.example.sparrow.configservice.exception.ResourceNotFoundException;
-import com.example.sparrow.configservice.repository.AppRepository;
 import com.example.sparrow.configservice.repository.ConfigRepository;
+import com.example.sparrow.configservice.repository.NamespaceRepository;
 import com.example.sparrow.configservice.repository.ReleaseRepository;
-import com.example.sparrow.configservice.service.AppService;
+import com.example.sparrow.configservice.service.NamespaceService;
 import com.example.sparrow.configservice.util.PropertyUtil;
-import com.example.sparrow.configservice.vo.AppVo;
+import com.example.sparrow.configservice.vo.NamespaceVo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -23,44 +23,44 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 
 @Service
-public class AppServiceImpl implements AppService {
+public class NamespaceServiceImpl implements NamespaceService {
     @Autowired
-    private AppRepository appRepository;
+    private NamespaceRepository namespaceRepository;
     @Autowired
     private ConfigRepository configRepository;
     @Autowired
     private ReleaseRepository releaseRepository;
 
     @Override
-    public PagedModel<AppVo> page(Pageable pageable) {
-        Page<AppVo> appVos = appRepository.findAll(pageable).map(this::toAppVo);
+    public PagedModel<NamespaceVo> page(Pageable pageable) {
+        Page<NamespaceVo> appVos = namespaceRepository.findAll(pageable).map(this::toNamespaceVo);
         return new  PagedModel<>(appVos);
     }
 
     @Override
-    public AppVo findOne(Long id) {
-        return appRepository.findById(id).map(this::toAppVo).orElseThrow(() -> new ResourceNotFoundException("App not found by id: " + id));
+    public NamespaceVo findOne(Long id) {
+        return namespaceRepository.findById(id).map(this::toNamespaceVo).orElseThrow(() -> new ResourceNotFoundException("Namespace not found by id: " + id));
     }
 
     @Override
-    public AppVo findOne(String name) {
-        return appRepository.findByName(name).map(this::toAppVo).orElseThrow(() -> new ResourceNotFoundException("App not found by name: " + name));
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void create(AppCreateDto dto) {
-        App app = new App();
-        BeanUtils.copyProperties(dto, app);
-        app.setConfigFile("");
-        appRepository.save(app);
+    public NamespaceVo findOne(String name) {
+        return namespaceRepository.findByName(name).map(this::toNamespaceVo).orElseThrow(() -> new ResourceNotFoundException("Namespace not found by name: " + name));
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void update(Long id, AppUpdateDto dto) {
-        App app = appRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("App not found by id: " + id));
-        Format format = app.getFormat();
+    public void create(NamespaceCreateDto dto) {
+        Namespace namespace = new Namespace();
+        BeanUtils.copyProperties(dto, namespace);
+        namespace.setConfigFile("");
+        namespaceRepository.save(namespace);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void update(Long id, NamespaceUpdateDto dto) {
+        Namespace namespace = namespaceRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Namespace not found by id: " + id));
+        Format format = namespace.getFormat();
         List<Config> configs = new ArrayList<>();
         Map<String, Object> map = new LinkedHashMap<>();
         if (Objects.equals(format, Format.YAML)) {
@@ -70,14 +70,14 @@ public class AppServiceImpl implements AppService {
         }
         for (var entry : map.entrySet()) {
             Config config = new Config();
-            config.setAppId(app.getId());
+            config.setNamespaceId(namespace.getId());
             config.setItemKey(entry.getKey());
             config.setItemValue(String.valueOf(entry.getValue()));
             configs.add(config);
         }
-        app.setConfigFile(dto.getConfigFile());
+        namespace.setConfigFile(dto.getConfigFile());
         // Simplified by deleting all and save new configs
-        configRepository.deleteByAppId(app.getId());
+        configRepository.deleteByNamespaceId(namespace.getId());
         configRepository.flush();
         configRepository.saveAll(configs);
     }
@@ -85,14 +85,14 @@ public class AppServiceImpl implements AppService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
-        appRepository.deleteById(id);
-        configRepository.deleteByAppId(id);
-        releaseRepository.deleteByAppId(id);
+        namespaceRepository.deleteById(id);
+        configRepository.deleteByNamespaceId(id);
+        releaseRepository.deleteByNamespaceId(id);
     }
 
-    private AppVo toAppVo(App app) {
-        AppVo appVo = new AppVo();
-        BeanUtils.copyProperties(app, appVo);
-        return appVo;
+    private NamespaceVo toNamespaceVo(Namespace namespace) {
+        NamespaceVo namespaceVo = new NamespaceVo();
+        BeanUtils.copyProperties(namespace, namespaceVo);
+        return namespaceVo;
     }
 }

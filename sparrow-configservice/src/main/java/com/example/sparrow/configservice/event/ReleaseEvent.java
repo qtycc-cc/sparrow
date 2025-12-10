@@ -5,12 +5,12 @@ import org.springframework.context.ApplicationEvent;
 
 @Getter
 public class ReleaseEvent extends ApplicationEvent {
-    private final Long appId;
+    private final Long namespaceId;
     private final Long releaseId;
 
-    public ReleaseEvent(Object source, Long appId, Long releaseId) {
+    public ReleaseEvent(Object source, Long namespaceId, Long releaseId) {
         super(source);
-        this.appId = appId;
+        this.namespaceId = namespaceId;
         this.releaseId = releaseId;
     }
 }

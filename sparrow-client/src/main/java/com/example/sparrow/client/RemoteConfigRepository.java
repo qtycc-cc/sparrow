@@ -28,8 +28,9 @@ public class RemoteConfigRepository {
     private final AtomicReference<SparrowConfiguration> configCache;
     private final RestTemplate restTemplate;
     private final List<ConfigChangeListener> listeners;
+    private final String namespace;
 
-    public RemoteConfigRepository() {
+    public RemoteConfigRepository(String namespace) {
         this.longPollingService = Executors.newSingleThreadExecutor();
         this.syncService = Executors.newSingleThreadExecutor();
         this.longPollStarted = new AtomicBoolean(false);
@@ -37,6 +38,7 @@ public class RemoteConfigRepository {
         this.configCache = new AtomicReference<>();
         this.restTemplate = SparrowInjector.getInstance(RestTemplate.class);
         this.listeners = new CopyOnWriteArrayList<>();
+        this.namespace = namespace;
         initialize();
     }
 
@@ -60,28 +62,27 @@ public class RemoteConfigRepository {
             value = System.getenv(key);
         }
         if (value == null) {
-            log.warn("Could not load config {} from Sparrow, will return default value instead", key);
+            log.warn("Could not load config {} from Sparrow, will return default value {} instead", key, defaultValue);
         }
         return value == null ? defaultValue : value;
     }
 
     private void initialize() {
-        String appName = System.getProperty("sparrow.appName");
         String serverUrl = System.getProperty("sparrow.serverUrl");
-        if (!StringUtils.hasLength(appName) || !StringUtils.hasLength(serverUrl)) {
+        if (!StringUtils.hasLength(namespace) || !StringUtils.hasLength(serverUrl)) {
             longPollStarted.set(false);
             throw new RuntimeException("Sparrow client config does not set correctly");
         }
         if (!serverUrl.endsWith("/")) {
             serverUrl += "/";
         }
-        sync(appName, serverUrl);
-        longPoll(appName, serverUrl);
+        sync(namespace, serverUrl);
+        longPoll(namespace, serverUrl);
     }
 
-    private synchronized void sync(String appName, String serverUrl) {
+    private synchronized void sync(String namespaceName, String serverUrl) {
         try {
-            String requestUrl = serverUrl + String.format("client/config/appName/%s", appName);
+            String requestUrl = serverUrl + String.format("client/config/namespaceName/%s", namespaceName);
             ResponseEntity<SparrowConfiguration> responseEntity = restTemplate.getForEntity(requestUrl, SparrowConfiguration.class);
             if (responseEntity.getStatusCode().is2xxSuccessful() && responseEntity.hasBody()) {
                 Properties oldProperties = configCache.get() == null ? null : configCache.get().getConfiguration();
@@ -97,12 +98,12 @@ public class RemoteConfigRepository {
         }
     }
 
-    private void longPoll(String appName, String serverUrl) {
+    private void longPoll(String namespaceName, String serverUrl) {
         if (!longPollStarted.compareAndSet(false, true)) {
             return;
         }
         longPollingService.submit(() -> {
-            doLongPoll(appName, serverUrl);
+            doLongPoll(namespaceName, serverUrl);
             try {
                 TimeUnit.MILLISECONDS.sleep(2 * 1000L);
             } catch (InterruptedException ignored) {
@@ -110,15 +111,16 @@ public class RemoteConfigRepository {
         });
     }
 
-    private void doLongPoll(String appName, String serverUrl) {
+    private void doLongPoll(String namespaceName, String serverUrl) {
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                String requestUrl = serverUrl + String.format("client/notification/appName/%s/notificationId/%d", appName, releaseId.get());
+                String requestUrl = serverUrl + String.format("client/notification/namespaceName/%s/notificationId/%d", namespaceName, releaseId.get());
+                System.out.println("The request url is " + requestUrl);
                 ResponseEntity<Long> responseEntity = restTemplate.getForEntity(requestUrl, Long.class);
                 if (responseEntity.getStatusCode().is2xxSuccessful() && responseEntity.hasBody()) {
                     releaseId.set(responseEntity.getBody());
                     syncService.submit(() -> {
-                        sync(appName, serverUrl);
+                        sync(namespaceName, serverUrl);
                     });
                 }
             } catch(Throwable ex) {

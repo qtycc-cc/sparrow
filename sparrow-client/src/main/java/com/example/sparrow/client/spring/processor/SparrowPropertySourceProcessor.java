@@ -2,7 +2,7 @@ package com.example.sparrow.client.spring.processor;
 
 import com.example.sparrow.client.ConfigChangeListener;
 import com.example.sparrow.client.ConfigPropertySource;
-import com.example.sparrow.client.ConfigPropertySourceFactory;
+import com.example.sparrow.client.factory.ConfigPropertySourceFactory;
 import com.example.sparrow.client.infrastructure.SparrowInjector;
 import com.google.common.collect.Sets;
 import org.springframework.beans.BeansException;
@@ -33,8 +33,11 @@ public class SparrowPropertySourceProcessor implements BeanFactoryPostProcessor,
         if (environment.getPropertySources().contains("sparrowPropertySource")) {
             return;
         }
+        String[] namespaceNames = System.getProperty("sparrow.namespaceNames").split(",");
         CompositePropertySource composite = new CompositePropertySource("sparrowPropertySource");
-        composite.addPropertySource(configPropertySourceFactory.get("application"));
+        for (String namespace : namespaceNames) {
+            composite.addPropertySource(configPropertySourceFactory.get(namespace));
+        }
         environment.getPropertySources().addFirst(composite);
     }
 

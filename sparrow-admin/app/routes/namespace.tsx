@@ -1,6 +1,6 @@
-import type { Route } from "./+types/app";
+import type { Route } from "./+types/namespace";
 import { type ColumnDef, type Updater } from "@tanstack/react-table";
-import type { PageResponse, Pagination, ProblemDetail, App } from "~/types";
+import type { PageResponse, Pagination, ProblemDetail, Namespace } from "~/types";
 import { DataTable } from "~/components/data-table";
 import { createReactTable, emptyPageResponse, timeStampToDateString } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
@@ -35,7 +35,7 @@ import {Label} from "~/components/ui/label";
 import {Input} from "~/components/ui/input";
 import {RadioGroup, RadioGroupItem} from "~/components/ui/radio-group";
 
-const columns: ColumnDef<App>[] = [
+const columns: ColumnDef<Namespace>[] = [
   {
     "accessorKey": "id",
     "header": "ID",
@@ -62,7 +62,7 @@ const columns: ColumnDef<App>[] = [
     id: "actions",
     "header": "操作",
     cell: ({ row }) => {
-      const app = row.original;
+      const namespace = row.original;
       const [showDeleteDialog, setShowDeleteDialog] = useState(false);
       return (
         <>
@@ -75,10 +75,10 @@ const columns: ColumnDef<App>[] = [
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem>
-                <Link className="w-full" to={`/app/${app.id}/config`}>配置详情</Link>
+                <Link className="w-full" to={`/namespace/${namespace.id}/config`}>配置详情</Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Link className="w-full" to={`/app/${app.id}/release`}>发布详情</Link>
+                <Link className="w-full" to={`/namespace/${namespace.id}/release`}>发布详情</Link>
               </DropdownMenuItem>
               <DropdownMenuItem variant="destructive" onClick={() => setShowDeleteDialog(true)}>
                 删除
@@ -90,14 +90,14 @@ const columns: ColumnDef<App>[] = [
               <AlertDialogHeader>
                 <AlertDialogTitle>确认删除？</AlertDialogTitle>
                 <AlertDialogDescription>
-                  此操作无法撤销。这将永久删除该应用及其所有配置和发布。
+                  此操作无法撤销。这将永久删除该命名空间及其所有配置和发布。
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>取消</AlertDialogCancel>
                 <Form method="delete">
-                  <input hidden name={"id"} value={app.id}></input>
-                  <AlertDialogAction type="submit" name="action" value="delete-app">
+                  <input hidden name={"id"} value={namespace.id}></input>
+                  <AlertDialogAction type="submit" name="action" value="delete-namespace">
                     确认删除
                   </AlertDialogAction>
                 </Form>
@@ -116,7 +116,7 @@ export async function clientLoader({
   const url = new URL(request.url);
   const pageIndex = Number(url.searchParams.get("pageIndex") || 0);
   const pageSize = Number(url.searchParams.get("pageSize") || 10);
-  const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/app?page=${pageIndex}&size=${pageSize}`, {
+  const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/namespace?page=${pageIndex}&size=${pageSize}`, {
     method: "GET",
     headers: {
       "Accept": "application/json",
@@ -127,9 +127,9 @@ export async function clientLoader({
     toast.error("加载失败", {
       description: problemDetail?.detail
     });
-    return emptyPageResponse<App>();
+    return emptyPageResponse<Namespace>();
   }
-  return await response.json() as PageResponse<App>;
+  return await response.json() as PageResponse<Namespace>;
 }
 
 export async function clientAction({
@@ -137,8 +137,8 @@ export async function clientAction({
 }: Route.ClientActionArgs) {
   const formData = await request.formData();
   const { action, ...value } = Object.fromEntries(formData);
-  if (action === "create-app") {
-    const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/app`, {
+  if (action === "create-namespace") {
+    const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/namespace`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -156,8 +156,8 @@ export async function clientAction({
     } else {
       toast.success("创建成功");
     }
-  } else if (action === "delete-app") {
-    const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/app/${value.id}`, {
+  } else if (action === "delete-namespace") {
+    const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/namespace/${value.id}`, {
       method: "DELETE"
     });
     if (!response.ok) {
@@ -177,7 +177,7 @@ export function HydrateFallback() {
   );
 }
 
-export default function App({
+export default function Namespace({
   loaderData,
 }: Route.ComponentProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -197,10 +197,10 @@ export default function App({
       pageSize: newState.pageSize.toString(),
     });
   }
-  const appPage = loaderData satisfies PageResponse<App>;
+  const namespacePage = loaderData satisfies PageResponse<Namespace>;
   const table = createReactTable({
     columns,
-    data: appPage.content,
+    data: namespacePage.content,
     pageCount: loaderData.page.totalPages,
     pagination: pagination,
     onPaginationChange: handlePaginationChange
@@ -209,21 +209,21 @@ export default function App({
   return (
     <div className="container mx-auto py-5">
       <div className="container mx-auto flex flex-row justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">应用列表</h1>
-        <Button onClick={() => setShowCreateDialog(true)}>新增应用</Button>
+        <h1 className="text-2xl font-bold">命名空间列表</h1>
+        <Button onClick={() => setShowCreateDialog(true)}>新增</Button>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogContent className="sm:max-w-[425px]">
             <Form method="post" onSubmit={() => setShowCreateDialog(false)}>
               <DialogHeader>
-                <DialogTitle>新增应用</DialogTitle>
+                <DialogTitle>新增命名空间</DialogTitle>
               </DialogHeader>
               <DialogDescription className="mb-4 mt-4 text-1xl">
-                新增应用
+                新增命名空间
               </DialogDescription>
               <div className="grid gap-4">
                 <div className="grid gap-3">
-                  <Label htmlFor="appName">name</Label>
-                  <Input required id="appName" name="name" />
+                  <Label htmlFor="namespaceName">name</Label>
+                  <Input required id="namespaceName" name="name" />
                   <RadioGroup name="format" defaultValue="PROPERTIES">
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="PROPERTIES" id="properties" />
@@ -240,13 +240,13 @@ export default function App({
                 <DialogClose asChild>
                   <Button variant="outline">取消</Button>
                 </DialogClose>
-                <Button type="submit" name={"action"} value={"create-app"}>保存</Button>
+                <Button type="submit" name={"action"} value={"create-namespace"}>保存</Button>
               </DialogFooter>
             </Form>
           </DialogContent>
         </Dialog>
       </div>
-      {appPage.content.length ? (
+      {namespacePage.content.length ? (
         <>
           <DataTable table={table} />
           <Separator className="my-4" />
@@ -259,9 +259,9 @@ export default function App({
               <EmptyMedia variant="icon">
                 <Grid2x2Check />
               </EmptyMedia>
-              <EmptyTitle>暂无应用</EmptyTitle>
+              <EmptyTitle>暂无命名空间</EmptyTitle>
               <EmptyDescription>
-                暂无应用，您可以刷新或新建。
+                暂无命名空间，您可以刷新或新建。
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent className="flex flex-row justify-center items-center">

@@ -11,8 +11,8 @@ import java.util.Optional;
 
 @Repository
 public interface ReleaseRepository extends JpaRepository<Release, Long>, JpaSpecificationExecutor<Release> {
-    Page<Release> findByAppId(Long appId, Pageable pageable);
-    Optional<Release> findFirstByAppIdOrderByIdDesc(Long appId);
+    Page<Release> findByNamespaceId(Long namespaceId, Pageable pageable);
+    Optional<Release> findFirstByNamespaceIdOrderByIdDesc(Long namespaceId);
     Optional<Release> findFirstByIdLessThanOrderByIdDesc(Long id);
-    Long deleteByAppId(Long appId);
+    Long deleteByNamespaceId(Long namespaceId);
 }

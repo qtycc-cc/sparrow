@@ -6,7 +6,7 @@ import java.util.Properties;
 
 @Data
 public class ConfigClientVo {
-    private Long appId;
+    private Long namespaceId;
     private Long releaseId;
     private Properties configuration;
 }

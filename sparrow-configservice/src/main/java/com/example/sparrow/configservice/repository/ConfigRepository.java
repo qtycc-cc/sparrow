@@ -11,7 +11,7 @@ import java.util.List;
 
 @Repository
 public interface ConfigRepository extends JpaRepository<Config, Long>, JpaSpecificationExecutor<Config> {
-    List<Config> findByAppId(Long appId);
-    Page<Config> findByAppId(Long appId, Pageable pageable);
-    Long deleteByAppId(Long appId);
+    List<Config> findByNamespaceId(Long namespaceId);
+    Page<Config> findByNamespaceId(Long namespaceId, Pageable pageable);
+    Long deleteByNamespaceId(Long namespaceId);
 }

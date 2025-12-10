@@ -4,8 +4,8 @@ import com.example.sparrow.configservice.entity.Config;
 import com.example.sparrow.configservice.entity.Release;
 import com.example.sparrow.configservice.event.ReleaseEvent;
 import com.example.sparrow.configservice.exception.ResourceNotFoundException;
-import com.example.sparrow.configservice.repository.AppRepository;
 import com.example.sparrow.configservice.repository.ConfigRepository;
+import com.example.sparrow.configservice.repository.NamespaceRepository;
 import com.example.sparrow.configservice.repository.ReleaseRepository;
 import com.example.sparrow.configservice.service.ReleaseService;
 import com.example.sparrow.configservice.util.TxUtils;
@@ -33,7 +33,7 @@ public class ReleaseServiceImpl implements ReleaseService {
     @Autowired
     private ReleaseRepository releaseRepository;
     @Autowired
-    private AppRepository appRepository;
+    private NamespaceRepository namespaceRepository;
     @Autowired
     private ConfigRepository configRepository;
     @Autowired
@@ -42,8 +42,8 @@ public class ReleaseServiceImpl implements ReleaseService {
     private ObjectMapper objectMapper;
 
     @Override
-    public PagedModel<ReleaseVo> page(Long appId, Pageable pageable) {
-        Page<ReleaseVo> releaseVos = releaseRepository.findByAppId(appId, pageable).map(this::toReleaseVo);
+    public PagedModel<ReleaseVo> page(Long namespaceId, Pageable pageable) {
+        Page<ReleaseVo> releaseVos = releaseRepository.findByNamespaceId(namespaceId, pageable).map(this::toReleaseVo);
         return new PagedModel<>(releaseVos);
     }
 
@@ -54,8 +54,8 @@ public class ReleaseServiceImpl implements ReleaseService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void rollback(Long appId, Long toId) {
-        Release latest = releaseRepository.findFirstByAppIdOrderByIdDesc(appId).orElseThrow(() -> new IllegalStateException("Latest release not found"));
+    public void rollback(Long namespaceId, Long toId) {
+        Release latest = releaseRepository.findFirstByNamespaceIdOrderByIdDesc(namespaceId).orElseThrow(() -> new IllegalStateException("Latest release not found"));
         Release toRelease;
         if (Objects.equals(latest.getId(), toId)) {
             // indicate user want to roll back the latest release
@@ -66,19 +66,19 @@ public class ReleaseServiceImpl implements ReleaseService {
         }
         // create a new release with target's config snapshot
         Release release = new Release();
-        release.setAppId(appId);
+        release.setNamespaceId(namespaceId);
         release.setConfigSnapshot(toRelease.getConfigSnapshot());
         releaseRepository.save(release);
-        TxUtils.afterCommit(() -> applicationEventPublisher.publishEvent(new ReleaseEvent(this, appId, release.getId())));
+        TxUtils.afterCommit(() -> applicationEventPublisher.publishEvent(new ReleaseEvent(this, namespaceId, release.getId())));
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void release(Long appId) {
-        appRepository.findById(appId).orElseThrow(() -> new ResourceNotFoundException("App not found"));
-        List<Config> configs = configRepository.findByAppId(appId);
+    public void release(Long namespaceId) {
+        namespaceRepository.findById(namespaceId).orElseThrow(() -> new ResourceNotFoundException("App not found"));
+        List<Config> configs = configRepository.findByNamespaceId(namespaceId);
         Release release = new Release();
-        release.setAppId(appId);
+        release.setNamespaceId(namespaceId);
         // avoid add backslash
         Map<String, String> configMap = configs.stream().collect(Collectors.toMap(Config::getItemKey, Config::getItemValue, (k1, k2) -> k1));
         try {
@@ -87,7 +87,7 @@ public class ReleaseServiceImpl implements ReleaseService {
             throw new RuntimeException(e);
         }
         releaseRepository.save(release);
-        TxUtils.afterCommit(() -> applicationEventPublisher.publishEvent(new ReleaseEvent(this, appId, release.getId())));
+        TxUtils.afterCommit(() -> applicationEventPublisher.publishEvent(new ReleaseEvent(this, namespaceId, release.getId())));
     }
 
     private ReleaseVo toReleaseVo(Release release) {

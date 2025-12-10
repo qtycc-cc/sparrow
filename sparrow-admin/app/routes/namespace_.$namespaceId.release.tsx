@@ -1,5 +1,5 @@
 import type { PageResponse, ProblemDetail, Release } from "~/types";
-import type { Route } from "./+types/app_.$appId.release";
+import type { Route } from "./+types/namespace_.$namespaceId.release";
 import { createReactTable, emptyPageResponse, timeStampToDateString } from "~/lib/utils";
 import { toast } from "sonner";
 import type { ColumnDef, Updater } from "@tanstack/react-table";
@@ -113,7 +113,7 @@ export async function clientLoader({
   const url = new URL(request.url);
   const pageIndex = Number(url.searchParams.get("pageIndex") || 0);
   const pageSize = Number(url.searchParams.get("pageSize") || 10);
-  const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/release/appId/${params.appId}?page=${pageIndex}&size=${pageSize}`, {
+  const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/release/namespaceId/${params.namespaceId}?page=${pageIndex}&size=${pageSize}`, {
     method: "GET",
     headers: {
       "Accept": "application/json",
@@ -142,7 +142,7 @@ export async function clientAction({
   const formData = await request.formData();
   const { action, ...value } = Object.fromEntries(formData);
   if (action === "rollback-release") {
-    const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/release/appId/${params.appId}/rollback?toId=${value.id}`, {
+    const response = await fetch(`${import.meta.env.VITE_SPARROW_HOST}/admin/release/namespaceId/${params.namespaceId}/rollback?toId=${value.id}`, {
       method: "POST"
     });
     if (!response.ok) {
@@ -156,7 +156,7 @@ export async function clientAction({
   }
 }
 
-export default function AppReleases({
+export default function NamespaceReleases({
   loaderData
 }: Route.ComponentProps) {
   const navigate = useNavigate();

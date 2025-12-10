@@ -1,9 +1,9 @@
 package com.example.sparrow.configservice.controller.client;
 
-import com.example.sparrow.configservice.entity.App;
+import com.example.sparrow.configservice.entity.Namespace;
 import com.example.sparrow.configservice.entity.Release;
 import com.example.sparrow.configservice.exception.ResourceNotFoundException;
-import com.example.sparrow.configservice.repository.AppRepository;
+import com.example.sparrow.configservice.repository.NamespaceRepository;
 import com.example.sparrow.configservice.repository.ReleaseRepository;
 import com.example.sparrow.configservice.vo.ConfigClientVo;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -25,27 +25,27 @@ import java.util.Properties;
 public class ConfigClientController {
     private static final TypeReference<Map<String, String>> type = new TypeReference<>() {};
     @Autowired
-    private AppRepository appRepository;
+    private NamespaceRepository namespaceRepository;
     @Autowired
     private ReleaseRepository releaseRepository;
     @Autowired
     private ObjectMapper objectMapper;
 
-    @GetMapping("/appName/{appName}")
-    public ResponseEntity<ConfigClientVo> loadConfigs(@PathVariable String appName) throws JsonProcessingException {
-        App app = appRepository.findByName(appName).orElseThrow(() -> new ResourceNotFoundException("App not found"));
-        Optional<Release> releaseOptional = releaseRepository.findFirstByAppIdOrderByIdDesc(app.getId());
+    @GetMapping("/namespaceName/{namespaceName}")
+    public ResponseEntity<ConfigClientVo> loadConfigs(@PathVariable String namespaceName) throws JsonProcessingException {
+        Namespace namespace = namespaceRepository.findByName(namespaceName).orElseThrow(() -> new ResourceNotFoundException("Namespace not found"));
+        Optional<Release> releaseOptional = releaseRepository.findFirstByNamespaceIdOrderByIdDesc(namespace.getId());
         if (releaseOptional.isPresent()) {
             Release release = releaseOptional.get();
             ConfigClientVo configClientVo = new ConfigClientVo();
             Properties properties = new Properties();
             properties.putAll(objectMapper.readValue(release.getConfigSnapshot(), type));
-            configClientVo.setAppId(app.getId());
+            configClientVo.setNamespaceId(namespace.getId());
             configClientVo.setReleaseId(release.getId());
             configClientVo.setConfiguration(properties);
             return ResponseEntity.ok(configClientVo);
         }
-        log.warn("Could not find any releases for this app: {}", appName);
+        log.warn("Could not find any releases for this namespace: {}", namespaceName);
         throw new ResourceNotFoundException("Releases not find, can not extract config snapshots from releases");
     }
 }

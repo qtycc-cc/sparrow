@@ -5,8 +5,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedModel;
 
 public interface ReleaseService {
-    PagedModel<ReleaseVo> page(Long appId, Pageable pageable);
+    PagedModel<ReleaseVo> page(Long namespaceId, Pageable pageable);
     ReleaseVo findOne(Long id);
-    void rollback(Long appId, Long toId);
-    void release(Long appId);
+    void rollback(Long namespaceId, Long toId);
+    void release(Long namespaceId);
 }

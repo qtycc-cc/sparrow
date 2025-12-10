@@ -1,6 +1,6 @@
 package com.example.sparrow.client.infrastructure;
 
-import com.example.sparrow.client.ConfigPropertySourceFactory;
+import com.example.sparrow.client.factory.ConfigPropertySourceFactory;
 import com.example.sparrow.client.spring.PlaceholderHelper;
 import com.example.sparrow.client.spring.SpringValueRegistry;
 import com.google.inject.AbstractModule;

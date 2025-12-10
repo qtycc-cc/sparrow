@@ -4,7 +4,7 @@ import com.example.sparrow.configservice.enums.Format;
 import lombok.Data;
 
 @Data
-public class AppVo {
+public class NamespaceVo {
     private Long id;
     private Long timeCreate;
     private Long timeUpdate;

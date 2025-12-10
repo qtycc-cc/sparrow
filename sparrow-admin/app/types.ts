@@ -20,7 +20,7 @@ export type PageResponse<T> = {
   }
 };
 
-export type App = {
+export type Namespace = {
   id: number;
   name: string;
   format: "PROPERTIES" | "YAML";

@@ -18,8 +18,8 @@ import java.util.Objects;
 @Entity
 @Table(name = "config", schema = "sparrow")
 public class Config extends BaseEntity {
-    @Column(name = "app_id", nullable = false)
-    private Long appId;
+    @Column(name = "namespace_id", nullable = false)
+    private Long namespaceId;
 
     @Column(name = "item_key", nullable = false)
     private String itemKey;

@@ -15,8 +15,8 @@ import java.util.Objects;
 @ToString
 @RequiredArgsConstructor
 @Entity
-@Table(name = "app", schema = "sparrow")
-public class App extends BaseEntity {
+@Table(name = "namespace", schema = "sparrow")
+public class Namespace extends BaseEntity {
     @Column(name = "name", nullable = false, unique = true)
     private String name;
     @Enumerated(EnumType.STRING)
@@ -32,8 +32,8 @@ public class App extends BaseEntity {
         Class<?> oEffectiveClass = o instanceof HibernateProxy proxy ? proxy.getHibernateLazyInitializer().getPersistentClass() : o.getClass();
         Class<?> thisEffectiveClass = this instanceof HibernateProxy proxy ? proxy.getHibernateLazyInitializer().getPersistentClass() : this.getClass();
         if (thisEffectiveClass != oEffectiveClass) return false;
-        App app = (App) o;
-        return getId() != null && Objects.equals(getId(), app.getId());
+        Namespace namespace = (Namespace) o;
+        return getId() != null && Objects.equals(getId(), namespace.getId());
     }
 
     @Override

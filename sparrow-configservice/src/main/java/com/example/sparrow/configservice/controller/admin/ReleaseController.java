@@ -16,9 +16,9 @@ public class ReleaseController {
     @Autowired
     private ReleaseService releaseService;
 
-    @GetMapping("/appId/{appId}")
-    public ResponseEntity<PagedModel<ReleaseVo>> page(@PathVariable Long appId, Pageable pageable) {
-        return ResponseEntity.ok(releaseService.page(appId, pageable));
+    @GetMapping("/namespaceId/{namespaceId}")
+    public ResponseEntity<PagedModel<ReleaseVo>> page(@PathVariable Long namespaceId, Pageable pageable) {
+        return ResponseEntity.ok(releaseService.page(namespaceId, pageable));
     }
 
     @GetMapping("/{id}")
@@ -26,17 +26,17 @@ public class ReleaseController {
         return ResponseEntity.ok(releaseService.findOne(id));
     }
 
-    @PostMapping("/appId/{appId}/rollback")
+    @PostMapping("/namespaceId/{namespaceId}/rollback")
     @Transactional(rollbackFor = Exception.class)
-    public ResponseEntity<Void> rollback(@PathVariable Long appId, @RequestParam Long toId) {
-        releaseService.rollback(appId, toId);
+    public ResponseEntity<Void> rollback(@PathVariable Long namespaceId, @RequestParam Long toId) {
+        releaseService.rollback(namespaceId, toId);
         return ResponseEntity.ok(null);
     }
 
-    @PostMapping("/appId/{appId}")
+    @PostMapping("/namespaceId/{namespaceId}")
     @Transactional(rollbackFor = Exception.class)
-    public ResponseEntity<Void> release(@PathVariable Long appId) {
-        releaseService.release(appId);
+    public ResponseEntity<Void> release(@PathVariable Long namespaceId) {
+        releaseService.release(namespaceId);
         return ResponseEntity.ok(null);
     }
 }
