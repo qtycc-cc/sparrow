@@ -18,6 +18,9 @@ import org.springframework.core.env.Environment;
 import java.util.List;
 import java.util.Set;
 
+import static com.example.sparrow.client.constant.SparrowConstant.SPARROW_NAMESPACE_PROPERTY_KEY;
+import static com.example.sparrow.client.constant.SparrowConstant.SPARROW_PROPERTY_SOURCE;
+
 public class SparrowPropertySourceProcessor implements BeanFactoryPostProcessor, EnvironmentAware, PriorityOrdered {
     private ConfigurableEnvironment environment;
     private static final Set<BeanFactory> AUTO_UPDATE_BEAN_FACTORIES = Sets.newConcurrentHashSet();
@@ -30,11 +33,11 @@ public class SparrowPropertySourceProcessor implements BeanFactoryPostProcessor,
     }
 
     private void initPropertySource() {
-        if (environment.getPropertySources().contains("sparrowPropertySource")) {
+        if (environment.getPropertySources().contains(SPARROW_PROPERTY_SOURCE)) {
             return;
         }
-        String[] namespaceNames = System.getProperty("sparrow.namespaceNames").split(",");
-        CompositePropertySource composite = new CompositePropertySource("sparrowPropertySource");
+        String[] namespaceNames = System.getProperty(SPARROW_NAMESPACE_PROPERTY_KEY).split(",");
+        CompositePropertySource composite = new CompositePropertySource(SPARROW_PROPERTY_SOURCE);
         for (String namespace : namespaceNames) {
             composite.addPropertySource(configPropertySourceFactory.get(namespace));
         }

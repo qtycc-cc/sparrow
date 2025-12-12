@@ -6,10 +6,13 @@ import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.util.StringUtils;
 
+import static com.example.sparrow.client.constant.SparrowConstant.SPARROW_DISCOVERY_URL_PROPERTY_KEY;
+import static com.example.sparrow.client.constant.SparrowConstant.SPARROW_NAMESPACE_PROPERTY_KEY;
+
 public class SparrowConfigEnvironmentProcessor implements EnvironmentPostProcessor, Ordered {
     public static final String[] SPARROW_SYSTEM_PROPERTIES = new String[]{
-            "sparrow.namespaceNames",
-            "sparrow.serverUrl"
+            SPARROW_NAMESPACE_PROPERTY_KEY,
+            SPARROW_DISCOVERY_URL_PROPERTY_KEY
     };
 
     @Override

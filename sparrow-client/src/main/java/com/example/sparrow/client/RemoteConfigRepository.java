@@ -1,5 +1,6 @@
 package com.example.sparrow.client;
 
+import com.example.sparrow.client.acl.ServiceWrapper;
 import com.example.sparrow.client.acl.SparrowConfiguration;
 import com.example.sparrow.client.infrastructure.SparrowInjector;
 import com.example.sparrow.client.model.ConfigChange;
@@ -18,6 +19,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.example.sparrow.client.constant.SparrowConstant.SPARROW_CONFIG_SERVICE_SERVICE_ID;
+import static com.example.sparrow.client.constant.SparrowConstant.SPARROW_DISCOVERY_URL_PROPERTY_KEY;
 
 @Slf4j
 public class RemoteConfigRepository {
@@ -68,20 +72,21 @@ public class RemoteConfigRepository {
     }
 
     private void initialize() {
-        String serverUrl = System.getProperty("sparrow.serverUrl");
-        if (!StringUtils.hasLength(namespace) || !StringUtils.hasLength(serverUrl)) {
+        String discoveryUrl = System.getProperty(SPARROW_DISCOVERY_URL_PROPERTY_KEY);
+        if (!StringUtils.hasLength(namespace) || !StringUtils.hasLength(discoveryUrl)) {
             longPollStarted.set(false);
             throw new RuntimeException("Sparrow client config does not set correctly");
         }
-        if (!serverUrl.endsWith("/")) {
-            serverUrl += "/";
+        if (!discoveryUrl.endsWith("/")) {
+            discoveryUrl += "/";
         }
-        sync(namespace, serverUrl);
-        longPoll(namespace, serverUrl);
+        sync(namespace, discoveryUrl);
+        longPoll(namespace, discoveryUrl);
     }
 
-    private synchronized void sync(String namespaceName, String serverUrl) {
+    private synchronized void sync(String namespaceName, String discoveryUrl) {
         try {
+            String serverUrl = getServiceWrapper(discoveryUrl).getUrl();
             String requestUrl = serverUrl + String.format("client/config/namespaceName/%s", namespaceName);
             ResponseEntity<SparrowConfiguration> responseEntity = restTemplate.getForEntity(requestUrl, SparrowConfiguration.class);
             if (responseEntity.getStatusCode().is2xxSuccessful() && responseEntity.hasBody()) {
@@ -98,12 +103,12 @@ public class RemoteConfigRepository {
         }
     }
 
-    private void longPoll(String namespaceName, String serverUrl) {
+    private void longPoll(String namespaceName, String discoveryUrl) {
         if (!longPollStarted.compareAndSet(false, true)) {
             return;
         }
         longPollingService.submit(() -> {
-            doLongPoll(namespaceName, serverUrl);
+            doLongPoll(namespaceName, discoveryUrl);
             try {
                 TimeUnit.MILLISECONDS.sleep(2 * 1000L);
             } catch (InterruptedException ignored) {
@@ -111,16 +116,16 @@ public class RemoteConfigRepository {
         });
     }
 
-    private void doLongPoll(String namespaceName, String serverUrl) {
+    private void doLongPoll(String namespaceName, String discoveryUrl) {
         while (!Thread.currentThread().isInterrupted()) {
             try {
+                String serverUrl = getServiceWrapper(discoveryUrl).getUrl();
                 String requestUrl = serverUrl + String.format("client/notification/namespaceName/%s/notificationId/%d", namespaceName, releaseId.get());
-                System.out.println("The request url is " + requestUrl);
                 ResponseEntity<Long> responseEntity = restTemplate.getForEntity(requestUrl, Long.class);
                 if (responseEntity.getStatusCode().is2xxSuccessful() && responseEntity.hasBody()) {
                     releaseId.set(responseEntity.getBody());
                     syncService.submit(() -> {
-                        sync(namespaceName, serverUrl);
+                        sync(namespaceName, discoveryUrl);
                     });
                 }
             } catch(Throwable ex) {
@@ -132,6 +137,15 @@ public class RemoteConfigRepository {
                 }
             }
         }
+    }
+
+    private ServiceWrapper getServiceWrapper(String discoveryUrl) {
+        String requestUrl = discoveryUrl + String.format("discovery/%s/loadBalance", SPARROW_CONFIG_SERVICE_SERVICE_ID);
+        ResponseEntity<ServiceWrapper> responseEntity = restTemplate.getForEntity(requestUrl, ServiceWrapper.class);
+        if (responseEntity.getStatusCode().is2xxSuccessful() && responseEntity.hasBody()) {
+            return responseEntity.getBody();
+        }
+        throw new RuntimeException("Something went wrong when getting service wrapper");
     }
 
     private List<ConfigChange> calcConfigChange(Properties oldProperties, Properties newProperties) {

@@ -1,0 +1,13 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: sparrow-discovery-service
+
+  cloud:
+    zookeeper:
+      connect: localhost:2181
+      discovery:
+        enabled: true
+        register: true
