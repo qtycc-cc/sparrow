@@ -25,6 +25,8 @@ public class PlaceholderHelper {
      * <br />
      * <br />
      * "${somePropertyValue}" -> "the actual property value"
+     *
+     * @see org.springframework.beans.factory.support.DefaultListableBeanFactory#doResolveDependency
      */
     public Object resolvePropertyValue(ConfigurableBeanFactory beanFactory, String beanName, String placeholder) {
         // resolve string value
