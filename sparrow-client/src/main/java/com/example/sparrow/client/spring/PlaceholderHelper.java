@@ -139,6 +139,10 @@ public class PlaceholderHelper {
         return strVal.substring(startIndex, endIndex + PLACEHOLDER_SUFFIX.length());
     }
 
+    /**
+     *
+     * @see org.springframework.util.PlaceholderParser#nextValidEndPrefix
+     */
     private int findPlaceholderEndIndex(CharSequence buf, int startIndex) {
         int index = startIndex + PLACEHOLDER_PREFIX.length();
         int withinNestedPlaceholder = 0;
